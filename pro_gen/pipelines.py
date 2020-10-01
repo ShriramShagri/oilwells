@@ -23,19 +23,33 @@ class ProGenPipeline:
     def process_item(self, item, spider):
         # if wh table is present, pass proper param
 
-        templist = [i.replace('\n' ,"") for i in item['wh']]
+        whRawData = [i.replace('\n' ,"") for i in item['wh']]
 
-        if templist[18] == '\n':
-            tryout = templist[1:14:2] + templist[15:17] + templist[18:25:2] +templist[27::2]
-            self.store_wh(tryout, False)
+        if whRawData[18] == '\n':
+            whFilteredData = whRawData[1:14:2] + whRawData[15:17] + whRawData[18:25:2] +whRawData[27::2]
+            self.store_wh(whFilteredData, False)
             
         else:
-            tryout = templist[1:14:2] + templist[15:18] + templist[19:26:2] +templist[28::2]
-            self.store_wh(tryout, True)
+            whFilteredData = whRawData[1:14:2] + whRawData[15:18] + whRawData[19:26:2] +whRawData[28::2]
+            self.store_wh(whFilteredData, True)
 
-        API, KID = tryout[0], tryout[1]
+        essentials = [whFilteredData[0], whFilteredData[1]]
 
-        # if wh table is present, pass proper param
+
+        # if casing table is present, pass proper param
+
+        if item['casing']:
+            if 'Purpose of String' in item['casing']:
+                casingRawData = item['casing'][item['casing'].index('Additives')+1:]
+                casingFilteredData = []
+                if len(casingRawData) % 7 == 0:
+                    for i in range(len(casingRawData)//7):
+                        casingFilteredData.append(essentials + casingRawData[i*7:(i+1)*7] + [""])
+                    self.store_casing(casingFilteredData)
+                elif len(casingRawData) % 8 == 0:
+                    for i in range(len(casingRawData)//8):
+                        casingFilteredData.append(essentials + casingRawData[i*8:(i+1)*8])
+                    self.store_casing(casingFilteredData)
 
         return item
 
@@ -114,9 +128,10 @@ class ProGenPipeline:
             self.cur.execute(sql, tuple(item))
             self.conn.commit()
     
-    def store_ip(self, item, kid):
+    def store_ip(self, item):
         sql = '''
         INSERT INTO IP
+        (API,
         KID,
         Producing_Method,
         Oil,
@@ -126,10 +141,10 @@ class ProGenPipeline:
         Size,
         Set_at,
         Packer_at,
-        Production_intervals 
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        Production_intervals)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         '''
-        self.cur.execute(sql, tuple(kid) + tuple(item))
+        self.cur.execute(sql, tuple(item))
         self.conn.commit()
     
 
@@ -148,21 +163,24 @@ class ProGenPipeline:
         self.cur.execute(sql, tuple(kid) + tuple(item))
         self.conn.commit()
     
-    def store_casing(self, item, kid):
-        sql = '''
-        INSERT INTO IP
-        KID,
-        Purpose_Of_String,
-        Size_Hole_Drilled
-        Size_Casing_Set
-        Weight
-        Setting_Depth,
-        Type_Of_Cement,
-        Sacks_Used
-        Type_And_Percent_Additives 
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        '''
-        self.cur.execute(sql, tuple(kid) + tuple(item))
+    def store_casing(self, item):
+        # sql = '''
+        # INSERT INTO IP
+        # (API
+        # KID,
+        # Purpose_Of_String,
+        # Size_Hole_Drilled
+        # Size_Casing_Set
+        # Weight
+        # Setting_Depth,
+        # Type_Of_Cement,
+        # Sacks_Used
+        # Type_And_Percent_Additives)
+        # VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        # '''
+        args_str = b','.join(self.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8") 
+        self.cur.execute("INSERT INTO casing VALUES " + args_str) 
+        # self.cur.execute(sql, tuple(item))
         self.conn.commit()
     
     def store_perforation(self, item, kid):
