@@ -21,7 +21,7 @@ class Crawler(scrapy.Spider):
         all_div = response.css("tr~ tr+ tr a:nth-child(1)").xpath("@href").extract()
 
         # for a in all_div:
-        yield response.follow(all_div[5], callback=self.get_data)
+        yield response.follow(all_div[7], callback=self.get_data)
 
     def get_data(self, response):
         tabl = response.css("hr+ table a").xpath("@href").extract()
@@ -32,15 +32,15 @@ class Crawler(scrapy.Spider):
         if tabls[0] == "View Engineering Data" and tabl:
             yield response.follow(tabl[0], callback=self.get_tables)
         else:
-
             page_data = dict()
-            # Add main table
+
             well_data = response.css('hr+ table tr:nth-child(1) td::text').extract()
+
             well_data2 = response.css("table:nth-child(5) tr:nth-child(1) td::text").extract()
 
-            if well_data:
+            if len(well_data) > 50:
                 page_data['well_data'] = well_data
-            if well_data2:
+            elif len(well_data2) > 50:
                 page_data['well_data'] = well_data2
 
             initial_potential = response.css('table:nth-child(7) td+ td::text').extract()
@@ -79,9 +79,9 @@ class Crawler(scrapy.Spider):
         # Add main table
         well_data = response.css('hr+ table tr:nth-child(1) td::text').extract()
         well_data2 = response.css("table:nth-child(5) tr:nth-child(1) td::text").extract()
-        if well_data:
+        if len(well_data) > 50:
             page_data['well_data'] = well_data
-        if well_data2:
+        elif len(well_data2) > 50:
             page_data['well_data'] = well_data2
 
         initial_potential = response.css('table:nth-child(7) td+ td::text').extract()
