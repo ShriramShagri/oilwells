@@ -22,25 +22,25 @@ class ProGenPipeline:
 
     def process_item(self, item, spider):
         # if wh table is present, pass proper param
-        print("Hello", len(item['wh']))
-        if len(item['wh']) >= 55:
-            templist = [i.replace('\n' ,"") for i in item['wh']]
-            tryout = templist[1:14:2] + templist[15:18] + templist[19:26:2] +templist[28::2]
-            print("This works", len(tryout))
-            self.store_wh(tryout)
-        elif len(item['wh']) == 54:
-            templist = [i.replace('\n' ,"") for i in item['wh']]
-            tryout = templist[1:14:2] + templist[15:17] + templist[18:25:2] +templist[27::2]
-            print("This works too", len(tryout))
-            self.store_wh(tryout)
 
-        # KID = tryout[1]
+        templist = [i.replace('\n' ,"") for i in item['wh']]
+
+        if templist[18] == '\n':
+            tryout = templist[1:14:2] + templist[15:17] + templist[18:25:2] +templist[27::2]
+            self.store_wh(tryout, False)
+            
+        else:
+            tryout = templist[1:14:2] + templist[15:18] + templist[19:26:2] +templist[28::2]
+            self.store_wh(tryout, True)
+
+        API, KID = tryout[0], tryout[1]
+
         # if wh table is present, pass proper param
 
         return item
 
-    def store_wh(self, item):
-        if len(item) >= 28:
+    def store_wh(self, item, extra):
+        if extra:
             while len(item)>28:
                 del item[-2]
             sql = '''
@@ -77,7 +77,9 @@ class ProGenPipeline:
             '''
             self.cur.execute(sql, tuple(item))
             self.conn.commit()
-        elif len(item) == 27:
+        else:
+            while len(item)>=28:
+                del item[-2]
             sql = '''
             INSERT INTO WH 
             (API,
