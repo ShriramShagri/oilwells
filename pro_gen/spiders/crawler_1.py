@@ -1,5 +1,6 @@
 import scrapy
 from scrapy.http import FormRequest
+from ..items import ProGenItem
 from ..constants import *
 
 
@@ -18,6 +19,7 @@ class Crawler(scrapy.Spider):
         }, callback=self.start_scraping)
 
     def start_scraping(self, response):
+        self.items = ProGenItem()
         all_div = response.css("tr~ tr+ tr a:nth-child(1)").xpath("@href").extract()
 
         # for a in all_div:
@@ -39,28 +41,28 @@ class Crawler(scrapy.Spider):
             well_data2 = response.css("table:nth-child(5) tr:nth-child(1) td::text").extract()
 
             if len(well_data) > 50:
-                page_data['well_data'] = well_data
+                self.items['wh'] = well_data
             elif len(well_data2) > 50:
-                page_data['well_data'] = well_data2
+                self.items['wh'] = well_data2
 
             initial_potential = response.css('table:nth-child(7) td+ td::text').extract()
 
             if initial_potential:
-                page_data['IP']: initial_potential
+                self.items['ip']: initial_potential
 
             casing_data = response.css("table:nth-child(9) th , table:nth-child(9) tr+ tr td::text").extract()
 
             if casing_data:
-                page_data['casing'] = casing_data
+                self.items['casing'] = casing_data
 
             perforation_data = response.css("table:nth-child(13) tr+ tr td , table:nth-child(13) th::text").extract()
 
             if perforation_data:
-                page_data['PF'] = perforation_data
+                self.items['pf'] = perforation_data
 
             cutting = response.css('table:nth-child(8) td::text').extract()
             if cutting:
-                page_data['cutting'] = cutting
+                self.items['cutting'] = cutting
 
             intent = response.css("tr+ tr li a").xpath("@href").extract()
             intent_name = response.css("tr+ tr li a::text").extract()
@@ -72,7 +74,7 @@ class Crawler(scrapy.Spider):
             if oil_production:
                 page_data['oil_production_data'] = oil_production
 
-            yield {'elems': page_data}
+            yield self.items
 
     def get_tables(self, response):
         page_data = dict()
@@ -80,28 +82,28 @@ class Crawler(scrapy.Spider):
         well_data = response.css('hr+ table tr:nth-child(1) td::text').extract()
         well_data2 = response.css("table:nth-child(5) tr:nth-child(1) td::text").extract()
         if len(well_data) > 50:
-            page_data['well_data'] = well_data
+            self.items['wh'] = well_data
         elif len(well_data2) > 50:
-            page_data['well_data'] = well_data2
+            self.items['wh'] = well_data2
 
         initial_potential = response.css('table:nth-child(7) td+ td::text').extract()
 
         if initial_potential:
-            page_data['IP']: initial_potential
+            self.items['ip']: initial_potential
 
         casing_data = response.css("table:nth-child(9) th::text , table:nth-child(9) tr+ tr td::text").extract()
 
         if casing_data:
-            page_data['casing'] = casing_data
+            self.items['casing'] = casing_data
 
         perforation_data = response.css("table:nth-child(13) td::text , table:nth-child(13) th::text").extract()
 
         if perforation_data:
-            page_data['PF'] = perforation_data
+            self.items['pf'] = perforation_data
 
         cutting = response.css('table:nth-child(8) td::text').extract()
         if cutting:
-            page_data['cutting'] = cutting
+            self.items['cutting'] = cutting
 
         intent = response.css("tr+ tr li a").xpath("@href").extract()
         intent_name = response.css("tr+ tr li a::text").extract()
@@ -113,4 +115,4 @@ class Crawler(scrapy.Spider):
         if oil_production:
             page_data['oil_production_data'] = oil_production
 
-        yield {'elems': page_data}
+        yield self.items
