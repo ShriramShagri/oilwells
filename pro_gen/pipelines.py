@@ -7,15 +7,16 @@
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
 import psycopg2
+from .constants import *
 
 
 class ProGenPipeline:
     def __init__(self):
         self.conn = psycopg2.connect(
-                            host="localhost",
-                            database="oilWells",
-                            user="postgres",
-                            password="lynx1729"
+                            host=HOST,
+                            database=DATABASE,
+                            user=USER,
+                            password=PASSWORD
                             )
         self.cur = self.conn.cursor()
 

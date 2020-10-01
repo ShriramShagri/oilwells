@@ -1,9 +1,8 @@
 # Database
-HOST = ''
-PORT = ''
-USER = ''
-PASSWORD = ''
-DATABASE = ''
+HOST = 'localhost'
+USER = 'postgres'
+PASSWORD = '123456'
+DATABASE = 'oilWells'
 
 # Counties
 
