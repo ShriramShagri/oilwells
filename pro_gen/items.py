@@ -8,5 +8,8 @@ import scrapy
 
 class ProGenItem(scrapy.Item):
     # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+    wh = scrapy.Field()
+    ip = scrapy.Field()
+    casing = scrapy.Field()
+    pf = scrapy.Field()
+    cutting = scrapy.Field()
