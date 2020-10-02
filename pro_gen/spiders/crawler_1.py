@@ -25,7 +25,7 @@ class Crawler(scrapy.Spider):
         all_div = response.css("tr~ tr+ tr a:nth-child(1)").xpath("@href").extract()
 
         # for a in all_div:
-        yield response.follow(all_div[7], callback=self.get_data)
+        yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayEng?f_kid=1044091564', callback=self.get_data)
 
     def get_data(self, response):
         global CURRENTKID
@@ -66,9 +66,10 @@ class Crawler(scrapy.Spider):
             #     self.items['pf'] = perforation_data
 
             headers = response.css('h3::text').extract()
-            cutting = response.css(f'table:nth-child({(headers.index("Cuttings Data")+1)*2}) ::text').extract()
-            if cutting:
-                self.items['cutting'] = cutting
+            if "Cuttings Data" in headers:
+                cutting = response.css(f'table:nth-child({(headers.index("Cuttings Data")+1)*2}) ::text').extract()
+                if cutting:
+                    self.items['cutting'] = cutting
 
             intent = response.css("li:nth-child(1) a").xpath("@href").extract()
             intent_name = response.css("tr+ tr li a::text").extract()
