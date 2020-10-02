@@ -27,7 +27,7 @@ class Crawler(scrapy.Spider):
         all_div = response.css("tr~ tr+ tr a:nth-child(1)").xpath("@href").extract()
 
         # for a in all_div:
-        yield response.follow(all_div[5],
+        yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1041231775',
                               callback=self.get_data)
 
     def get_data(self, response):
@@ -69,29 +69,23 @@ class Crawler(scrapy.Spider):
             #     self.items['pf'] = perforation_data
 
             headers = response.css('h3::text').extract()
+            print(headers)
             if "Cuttings Data" in headers:
                 cutting = response.css(f'table:nth-child({(headers.index("Cuttings Data") + 1) * 2}) ::text').extract()
                 if cutting:
                     self.items['cutting'] = cutting
+            if "ACO-1 and Driller's Logs" in headers:
+                cuttinghref = response.css('b+ ul a::attr(href)').extract()
+                cutting = response.css('b+ ul a::text').extract()
+                
+                print(cutting, cuttinghref)
 
-            intent = response.css("li:nth-child(1) a").xpath("@href").extract()
-            intent_name = response.css("li:nth-child(1) a::text").extract()
-            for name in intent_name:
-                if name == "Intent To Drill Well":
-                    temp = intent[intent_name.index("Intent To Drill Well")]
-                    yield Request(
-                        url=response.urljoin(temp),
+                for i in range(len(cutting)):
+                    if cutting[i] in TODOWNLOAD:
+                        yield Request(
+                        url=response.urljoin(cuttinghref[i]),
                         callback=self.save_pdf
                     )
-
-            print(intent)
-            # for href in response.css("li:nth-child(1) a").xpath("@href").extract():
-            #     yield Request(
-            #         url=response.urljoin(href),
-            #         callback=self.save_pdf
-            #     )
-            if intent:
-                page_data['intent'] = intent
 
             oil_production = response.css('h3+ p a').xpath("@href").extract()
             if oil_production:
@@ -127,29 +121,24 @@ class Crawler(scrapy.Spider):
         if perforation_data:
             self.items['pf'] = perforation_data
 
-        cutting = response.css('table:nth-child(8) ::text').extract()
-        if cutting:
-            self.items['cutting'] = cutting
+        headers = response.css('h3::text').extract()
+        print(headers)
+        if "Cuttings Data" in headers:
+            cutting = response.css(f'table:nth-child({(headers.index("Cuttings Data") + 1) * 2}) ::text').extract()
+            if cutting:
+                self.items['cutting'] = cutting
+        if "ACO-1 and Driller's Logs" in headers:
+            cuttinghref = response.css('b+ ul a::attr(href)').extract()
+            cutting = response.css('b+ ul a::text').extract()
+            
+            print(cutting, cuttinghref)
 
-        intent = response.css("li:nth-child(1) a").xpath("@href").extract()
-        intent_name = response.css("li:nth-child(1) a::text").extract()
-        print(intent)
-
-        for name in intent_name:
-            if name == "Intent To Drill Well" :
-                temp = intent[intent_name.index("Intent To Drill Well")]
-                yield Request(
-                    url=response.urljoin(temp),
+            for i in range(len(cutting)):
+                if cutting[i] in TODOWNLOAD:
+                    yield Request(
+                    url=response.urljoin(cuttinghref[i]),
                     callback=self.save_pdf
                 )
-
-        # for href in response.css("li:nth-child(1) a").xpath("@href").extract():
-        #     yield Request(
-        #         url=response.urljoin(intent[intent_name.index("Intent To Drill Well")]),
-        #         callback=self.save_pdf
-        #     )
-        if intent:
-            page_data['intent'] = intent
 
         oil_production = response.css('h3+ p a').xpath("@href").extract()
         if oil_production:
