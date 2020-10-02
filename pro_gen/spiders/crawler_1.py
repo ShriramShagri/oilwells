@@ -27,7 +27,7 @@ class Crawler(scrapy.Spider):
         all_div = response.css("tr~ tr+ tr a:nth-child(1)").xpath("@href").extract()
 
         # for a in all_div:
-        yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1037989902',
+        yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1044091564',
                               callback=self.get_data)
 
     def get_data(self, response):
