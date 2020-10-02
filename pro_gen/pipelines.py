@@ -70,6 +70,51 @@ class ProGenPipeline:
 
         essentials = [whFilteredData[0], whFilteredData[1]]
 
+
+         # if casing table is present, pass proper param
+
+        # try:
+        if item['ip']:
+            ipRawData = [i.replace('\n', "") for i in item['ip']]
+            ipFilteredData = []
+
+            ipFilteredData.append(ipRawData[ipRawData.index('Producing Method: ') + 1])
+            if ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Oil: ') + 1] != '\xa0\xa0\xa0\xa0Water: ':
+                ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Oil: ') + 1])
+            else:
+                ipFilteredData.append('')
+            if ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Water: ') + 1] != '\xa0\xa0\xa0\xa0Gas: ':
+                ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Water: ') + 1])
+            else:
+                ipFilteredData.append('')
+            if ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Gas: ') + 1] != 'Disposition of Gas: ':
+                ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Gas: ') + 1])
+            else:
+                ipFilteredData.append('')
+            if ipRawData[ipRawData.index('Disposition of Gas: ') + 1] != '\xa0\xa0\xa0\xa0Size: ':
+                ipFilteredData.append(ipRawData[ipRawData.index('Disposition of Gas: ') + 1])
+            else:
+                ipFilteredData.append('')
+            if ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Size: ') + 1] != '\xa0\xa0\xa0\xa0Set at: ':
+                ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Size: ') + 1])
+            else:
+                ipFilteredData.append('')
+            if ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Set at: ') + 1] != '\xa0\xa0\xa0\xa0Packer at: ':
+                ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Set at: ') + 1])
+            else:
+                ipFilteredData.append('')
+            if ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Packer at: ') + 1] != 'Production intervals: ':
+                ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Packer at: ') + 1])
+            else:
+                ipFilteredData.append('')
+            ipFilteredData.append(ipRawData[ipRawData.index('Production intervals: ') + 1])
+            
+            tem = list(essentials)
+            tem.extend(ipFilteredData)
+            self.store_ip(tem)
+        # except:
+        #     pass
+
         # if casing table is present, pass proper param
 
         try:
@@ -135,22 +180,9 @@ class ProGenPipeline:
         self.conn.commit()
 
     def store_ip(self, item):
-        sql = '''
-        INSERT INTO IP
-        (API,
-        KID,
-        Producing_Method,
-        Oil,
-        Water,
-        Gas,
-        Disposition of Gas,
-        Size,
-        Set_at,
-        Packer_at,
-        Production_intervals)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        '''
-        self.cur.execute(sql, tuple(item))
+        self.cur.execute(
+            "INSERT INTO IP VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            tuple(item))
         self.conn.commit()
 
     def store_cutting(self, item):
