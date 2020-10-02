@@ -36,22 +36,47 @@ https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayEng?f_kid=1044091564
 
 
 ---
+Oil Production 
 https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1041231775
 
 
 ---
-# Step 1
-> Form request
+Tops Data in new Page
+https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1002884009
 
-https://www.youtube.com/watch?v=I_vAGDZeg5Q&t=612s
+---
 
-Fill the form with appropriate details and submit form
+DST Report
+https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1002883840
 
-# Step 2
-> Get data from column 1 and save it(per page)
+---
 
-> For Every data in the saved data crawl inside and...???
+Drill Stem Test
+https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1044998943
 
-> once a page is done crawling goto next page using pagination....url changes..
+---
 
-https://www.youtube.com/watch?v=_5a_o3qcGOI
+Tops Data: 
+https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1031431227
+
+---
+Tops Data with new page: 
+https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1006067479
+
+---
+Cuttings Data wtih 6 fields: 
+https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1042194696
+
+---
+Cuttings data with 3 fields: 
+https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1006067447
+
+---
+Messed Up pf
+https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayEng?f_kid=1044998943
+
+---
+Well with WH and Production data: 
+https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1025721792
+
+---
