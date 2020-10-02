@@ -5,7 +5,7 @@ from ..constants import *
 import os
 from scrapy.http import Request
 
-
+CURRENTKID = ""
 class Crawler(scrapy.Spider):
     name = CRAWLER_NAME
     start_urls = [
@@ -28,6 +28,7 @@ class Crawler(scrapy.Spider):
         yield response.follow(all_div[7], callback=self.get_data)
 
     def get_data(self, response):
+        global CURRENTKID
         tabl = response.css("hr+ table a").xpath("@href").extract()
         tabls = response.css("hr+ table a::text").extract()
 
@@ -44,8 +45,10 @@ class Crawler(scrapy.Spider):
 
             if len(well_data) > 50:
                 self.items['wh'] = well_data
+                CURRENTKID = well_data[5].replace("\n", "")
             elif len(well_data2) > 50:
                 self.items['wh'] = well_data2
+                CURRENTKID = well_data2[5].replace("\n", "")
 
             initial_potential = response.css('table:nth-child(7) td+ td::text').extract()
 
@@ -62,18 +65,19 @@ class Crawler(scrapy.Spider):
             # if perforation_data:
             #     self.items['pf'] = perforation_data
 
-            cutting = response.css('table:nth-child(8) ::text').extract()
+            headers = response.css('h3::text').extract()
+            cutting = response.css(f'table:nth-child({(headers.index("Cuttings Data")+1)*2}) ::text').extract()
             if cutting:
                 self.items['cutting'] = cutting
 
             intent = response.css("li:nth-child(1) a").xpath("@href").extract()
             intent_name = response.css("tr+ tr li a::text").extract()
             print(intent)
-            for href in response.css("li:nth-child(1) a").xpath("@href").extract():
-                yield Request(
-                    url=response.urljoin(href),
-                    callback=self.save_pdf
-                )
+            # for href in response.css("li:nth-child(1) a").xpath("@href").extract():
+            #     yield Request(
+            #         url=response.urljoin(href),
+            #         callback=self.save_pdf
+            #     )
             if intent:
                 page_data['intent'] = intent
 
@@ -84,14 +88,17 @@ class Crawler(scrapy.Spider):
             yield self.items
 
     def get_tables(self, response):
+        global CURRENTKID
         page_data = dict()
         # Add main table
         well_data = response.css('hr+ table tr:nth-child(1) ::text').extract()
         well_data2 = response.css("table:nth-child(5) tr:nth-child(1) ::text").extract()
         if len(well_data) > 50:
             self.items['wh'] = well_data
+            CURRENTKID = well_data[5].replace("\n", "")
         elif len(well_data2) > 50:
             self.items['wh'] = well_data2
+            CURRENTKID = well_data[5].replace("\n", "")
 
         initial_potential = response.css('table:nth-child(7) td ::text').extract()
 
@@ -115,11 +122,11 @@ class Crawler(scrapy.Spider):
         intent = response.css("li:nth-child(1) a").xpath("@href").extract()
         intent_name = response.css("tr+ tr li a::text").extract()
         print(intent)
-        for href in response.css("li:nth-child(1) a").xpath("@href").extract():
-            yield Request(
-                url=response.urljoin(href),
-                callback=self.save_pdf
-            )
+        # for href in response.css("li:nth-child(1) a").xpath("@href").extract():
+        #     yield Request(
+        #         url=response.urljoin(href),
+        #         callback=self.save_pdf
+        #     )
         if intent:
             page_data['intent'] = intent
 
@@ -130,7 +137,10 @@ class Crawler(scrapy.Spider):
         yield self.items
 
     def save_pdf(self, response):
-        path = os.path.join(os.getcwd(), "docs", "123.pdf")
+        cwd = os.getcwd()
+        if not os.path.isdir(os.path.join(cwd, "docs", CURRENTKID)):
+            os.mkdir(os.path.join(cwd, "docs", CURRENTKID))
+        path = os.path.join(cwd, "docs", CURRENTKID, f"{CURRENTKID}.pdf")
         self.logger.info('Saving PDF %s', path)
         with open(path, 'wb') as file:
             file.write(response.body)
