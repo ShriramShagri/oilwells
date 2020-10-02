@@ -26,7 +26,6 @@ class ProGenPipeline:
 
         whRawData = [i.replace('\n', "") for i in item['wh']]
         whFilteredData = []
-        extra = False
 
         whFilteredData.append(whRawData[whRawData.index('API: ') + 1])
         whFilteredData.append(whRawData[whRawData.index('KID: ') + 1])
@@ -37,9 +36,10 @@ class ProGenPipeline:
         whFilteredData.append(whRawData[whRawData.index('Field:') + 1])
         whFilteredData.append(whRawData[whRawData.index('Location: ') + 1])
         whFilteredData.append(whRawData[whRawData.index('Location: ') + 2])
-        if whRawData[whRawData.index('Location: ') + 2] != '':
+        if whRawData[whRawData.index('Location: ') + 2] != 'NAD27 Longitude: ':
             whFilteredData.append(whRawData[whRawData.index('Location: ') + 3])
-            extra = True
+        else:
+             whFilteredData.append("")
         whFilteredData.append(whRawData[whRawData.index('NAD27 Longitude: ') + 1])
         whFilteredData.append(whRawData[whRawData.index('NAD27 Latitude: ') + 1])
         whFilteredData.append(whRawData[whRawData.index('NAD83 Longitude: ') + 1])
@@ -60,9 +60,13 @@ class ProGenPipeline:
         whFilteredData.append(whRawData[whRawData.index('IP Oil (bbl): ') + 1])
         whFilteredData.append(whRawData[whRawData.index('IP Water (bbl): ') + 1])
         whFilteredData.append(whRawData[whRawData.index('IP GAS (MCF): ') + 1])
+        try:
+            whFilteredData.append(whRawData[whRawData.index('KDOR code for Oil:') + 1])
+        except:
+            whFilteredData.append("")
         whFilteredData.append(whRawData[whRawData.index('KCC Permit No.: ') + 1])
 
-        # self.store_wh(whFilteredData, extra)
+        # self.store_wh(whFilteredData)
 
         essentials = [whFilteredData[0], whFilteredData[1]]
 
@@ -124,46 +128,11 @@ class ProGenPipeline:
 
         return item
 
-    def store_wh(self, item, extra):
-        if extra:
-            self.cur.execute(
-                "INSERT INTO WH VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                tuple(item))
-            self.conn.commit()
-        else:
-            sql = '''
-            INSERT INTO WH 
-            (API,
-            KID,
-            Lease,
-            Well,
-            Original_operator,
-            Current_operator,
-            Field,
-            Location1,
-            Location2,
-            NAD27_Longitude,
-            NAD27_Latitude,
-            NAD83_Longitude,
-            NAD83_Latitude,
-            County,
-            Permit_Date,
-            Spud_Date,
-            Completion_Date,
-            Plugging_Date,
-            Well_Type,
-            Status,
-            Total_Depth,
-            Elevation,
-            Producing_Formation,
-            IP_Oil,
-            IP_Water,
-            IP_GAS,
-            KCC_Permit_No)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            '''
-            self.cur.execute(sql, tuple(item))
-            self.conn.commit()
+    def store_wh(self, item):
+        self.cur.execute(
+            "INSERT INTO WH VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            tuple(item))
+        self.conn.commit()
 
     def store_ip(self, item):
         sql = '''
