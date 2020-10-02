@@ -22,49 +22,43 @@ class ProGenPipeline:
 
     def process_item(self, item, spider):
 
+        def checklist(s1, s2, l):
+            try:
+                if l[l.index(s1)+1] != s2:
+                    return True
+                return False
+            except:
+                return False
+
         # if wh table is present, pass proper param
 
         whRawData = [i.replace('\n', "") for i in item['wh']]
         whFilteredData = []
-
-        whFilteredData.append(whRawData[whRawData.index('API: ') + 1])
-        whFilteredData.append(whRawData[whRawData.index('KID: ') + 1])
-        whFilteredData.append(whRawData[whRawData.index('Lease:') + 1])
-        whFilteredData.append(whRawData[whRawData.index('Well:') + 1])
-        whFilteredData.append(whRawData[whRawData.index('Original operator:') + 1])
-        whFilteredData.append(whRawData[whRawData.index('Current operator:') + 1])
-        whFilteredData.append(whRawData[whRawData.index('Field:') + 1])
-        whFilteredData.append(whRawData[whRawData.index('Location: ') + 1])
-        whFilteredData.append(whRawData[whRawData.index('Location: ') + 2])
-        if whRawData[whRawData.index('Location: ') + 2] != 'NAD27 Longitude: ':
-            whFilteredData.append(whRawData[whRawData.index('Location: ') + 3])
-        else:
-             whFilteredData.append("")
-        whFilteredData.append(whRawData[whRawData.index('NAD27 Longitude: ') + 1])
-        whFilteredData.append(whRawData[whRawData.index('NAD27 Latitude: ') + 1])
-        whFilteredData.append(whRawData[whRawData.index('NAD83 Longitude: ') + 1])
-        whFilteredData.append(whRawData[whRawData.index('NAD83 Latitude: ') + 1])
-        whFilteredData.append(whRawData[whRawData.index('County: ') + 1])
-        whFilteredData.append(whRawData[whRawData.index('Permit Date: ') + 1])
-        whFilteredData.append(whRawData[whRawData.index('Spud Date: ') + 1])
-        whFilteredData.append(whRawData[whRawData.index('Completion Date: ') + 1])
-        whFilteredData.append(whRawData[whRawData.index('Plugging Date: ') + 1])
-        whFilteredData.append(whRawData[whRawData.index('Well Type: ') + 1])
+        for clms in range(len(WHCOLUMS)-1):
+            if(WHCOLUMS[clms] == 'Location1'):
+                if checklist('Location: ', 'NAD27 Longitude: ', whRawData):
+                    whFilteredData.append(whRawData[whRawData.index('Location: ') + 1])
+                else:
+                    whFilteredData.append("") 
+            elif(WHCOLUMS[clms] == 'Location2'):
+                if checklist('Location: ', 'NAD27 Longitude: ', whRawData):
+                    whFilteredData.append(whRawData[whRawData.index('Location: ') + 2])
+                else:
+                    whFilteredData.append("") 
+            elif(WHCOLUMS[clms] == 'Location3'):
+                if checklist('Location: ', 'NAD27 Longitude: ', whRawData):
+                    whFilteredData.append(whRawData[whRawData.index('Location: ') + 3])
+                else:
+                    whFilteredData.append("") 
+            elif checklist(WHCOLUMS[clms], WHCOLUMS[clms + 1], whRawData):
+                whFilteredData.append(whRawData[whRawData.index(WHCOLUMS[clms]) + 1])
+            else:
+               whFilteredData.append("") 
         try:
-            whFilteredData.append(whRawData[whRawData.index('Status: ') + 1])
+            whFilteredData.append(whRawData[whRawData.index(WHCOLUMS[-1]) + 1])
+            print('Tried')
         except:
             whFilteredData.append("")
-        whFilteredData.append(whRawData[whRawData.index('Total Depth: ') + 1])
-        whFilteredData.append(whRawData[whRawData.index('Elevation: ') + 1])
-        whFilteredData.append(whRawData[whRawData.index('Producing Formation: ') + 1])
-        whFilteredData.append(whRawData[whRawData.index('IP Oil (bbl): ') + 1])
-        whFilteredData.append(whRawData[whRawData.index('IP Water (bbl): ') + 1])
-        whFilteredData.append(whRawData[whRawData.index('IP GAS (MCF): ') + 1])
-        try:
-            whFilteredData.append(whRawData[whRawData.index('KDOR code for Oil:') + 1])
-        except:
-            whFilteredData.append("")
-        whFilteredData.append(whRawData[whRawData.index('KCC Permit No.: ') + 1])
 
         # self.store_wh(whFilteredData)
 
@@ -73,47 +67,52 @@ class ProGenPipeline:
 
          # if casing table is present, pass proper param
 
-        try:
-            if item['ip']:
-                ipRawData = [i.replace('\n', "") for i in item['ip']]
-                ipFilteredData = []
+        
 
-                ipFilteredData.append(ipRawData[ipRawData.index('Producing Method: ') + 1])
-                if ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Oil: ') + 1] != '\xa0\xa0\xa0\xa0Water: ':
-                    ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Oil: ') + 1])
-                else:
-                    ipFilteredData.append('')
-                if ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Water: ') + 1] != '\xa0\xa0\xa0\xa0Gas: ':
-                    ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Water: ') + 1])
-                else:
-                    ipFilteredData.append('')
-                if ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Gas: ') + 1] != 'Disposition of Gas: ':
-                    ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Gas: ') + 1])
-                else:
-                    ipFilteredData.append('')
-                if ipRawData[ipRawData.index('Disposition of Gas: ') + 1] != '\xa0\xa0\xa0\xa0Size: ':
-                    ipFilteredData.append(ipRawData[ipRawData.index('Disposition of Gas: ') + 1])
-                else:
-                    ipFilteredData.append('')
-                if ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Size: ') + 1] != '\xa0\xa0\xa0\xa0Set at: ':
-                    ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Size: ') + 1])
-                else:
-                    ipFilteredData.append('')
-                if ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Set at: ') + 1] != '\xa0\xa0\xa0\xa0Packer at: ':
-                    ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Set at: ') + 1])
-                else:
-                    ipFilteredData.append('')
-                if ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Packer at: ') + 1] != 'Production intervals: ':
-                    ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Packer at: ') + 1])
-                else:
-                    ipFilteredData.append('')
+        # try:
+        if item['ip']:
+            ipRawData = [i.replace('\n', "") for i in item['ip']]
+            ipFilteredData = []
+            # IPDOWNLOAD = []
+            ipFilteredData.append(ipRawData[ipRawData.index('Producing Method: ') + 1])
+            if checklist('\xa0\xa0\xa0\xa0Oil: ', '\xa0\xa0\xa0\xa0Water: ', ipRawData):
+                ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Oil: ') + 1])
+            else:
+                ipFilteredData.append('')
+            if checklist('\xa0\xa0\xa0\xa0Water: ', '\xa0\xa0\xa0\xa0Gas: ', ipRawData):
+                ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Water: ') + 1])
+            else:
+                ipFilteredData.append('')
+            if checklist('\xa0\xa0\xa0\xa0Gas: ', 'Disposition of Gas: ', ipRawData):
+                ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Gas: ') + 1])
+            else:
+                ipFilteredData.append('')
+            if checklist('Disposition of Gas: ', '\xa0\xa0\xa0\xa0Size: ', ipRawData):
+                ipFilteredData.append(ipRawData[ipRawData.index('Disposition of Gas: ') + 1])
+            else:
+                ipFilteredData.append('')
+            if checklist('\xa0\xa0\xa0\xa0Size: ', '\xa0\xa0\xa0\xa0Set at: ', ipRawData):
+                ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Size: ') + 1])
+            else:
+                ipFilteredData.append('')
+            if checklist('\xa0\xa0\xa0\xa0Set at: ', '\xa0\xa0\xa0\xa0Packer at: ', ipRawData):
+                ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Set at: ') + 1])
+            else:
+                ipFilteredData.append('')
+            if checklist('\xa0\xa0\xa0\xa0Packer at: ', 'Production intervals: ', ipRawData):
+                ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Packer at: ') + 1])
+            else:
+                ipFilteredData.append('')
+            try:
                 ipFilteredData.append(ipRawData[ipRawData.index('Production intervals: ') + 1])
-                
-                tem = list(essentials)
-                tem.extend(ipFilteredData)
-                # self.store_ip(tem)
-        except:
-            pass
+            except:
+                ipFilteredData.append('')
+            
+            tem = list(essentials)
+            tem.extend(ipFilteredData)
+            self.store_ip(tem)
+        # except:
+        #     pass
 
         # if casing table is present, pass proper param
 
