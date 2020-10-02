@@ -22,9 +22,9 @@ class ProGenPipeline:
 
     def process_item(self, item, spider):
 
-    # if wh table is present, pass proper param
+        # if wh table is present, pass proper param
 
-        whRawData = [i.replace('\n' ,"") for i in item['wh']]
+        whRawData = [i.replace('\n', "") for i in item['wh']]
         whFilteredData = []
         extra = False
 
@@ -63,7 +63,6 @@ class ProGenPipeline:
         whFilteredData.append(whRawData[whRawData.index('KCC Permit No.: ') + 1])
 
         # self.store_wh(whFilteredData, extra)
-            
 
         essentials = [whFilteredData[0], whFilteredData[1]]
 
@@ -73,28 +72,27 @@ class ProGenPipeline:
             if item['casing']:
                 casingRawData = item['casing'][item['casing'].index('Additives') + 3:]
                 casingFilteredData = []
-                for i in range(len(casingRawData)//17):
+                for i in range(len(casingRawData) // 17):
                     temp = list()
                     temp.extend(essentials)
-                    temp.extend(casingRawData[i*17+1:(i+1)*17:2])
+                    temp.extend(casingRawData[i * 17 + 1:(i + 1) * 17:2])
                     casingFilteredData.append(temp)
                 # self.store_casing(casingFilteredData)
         except:
             pass
-        
 
         # if perforation table is present, pass proper param
 
         try:
             if item['pf']:
-                pfRawData = item['pf'][item['pf'].index('Depth')+3:]
-                pfRawData = [i.replace('\n' ,"") for i in pfRawData]
+                pfRawData = item['pf'][item['pf'].index('Depth') + 3:]
+                pfRawData = [i.replace('\n', "") for i in pfRawData]
                 pfFilteredData = []
 
-                for i in range(len(pfRawData)//9):
+                for i in range(len(pfRawData) // 9):
                     temp = list()
                     temp.extend(essentials)
-                    temp.extend(pfRawData[i*9+1:(i+1)*9:2])
+                    temp.extend(pfRawData[i * 9 + 1:(i + 1) * 9:2])
                     pfFilteredData.append(temp)
                 # self.store_pf(pfFilteredData)
 
@@ -107,7 +105,7 @@ class ProGenPipeline:
             if item['cutting']:
                 cuttingRawData = []
                 cuttingRawDatatemp = item['cutting'][2:]
-                cuttingRawDatatemp = [i.replace('\n' ,"") for i in cuttingRawDatatemp]
+                cuttingRawDatatemp = [i.replace('\n', "") for i in cuttingRawDatatemp]
                 filterString = '$_%&^%'.join(cuttingRawDatatemp)
                 filterList = filter(None, filterString.split("Box Number: "))
                 for sts in filterList:
@@ -126,10 +124,11 @@ class ProGenPipeline:
 
         return item
 
-
     def store_wh(self, item, extra):
         if extra:
-            self.cur.execute("INSERT INTO WH VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)" , tuple(item))
+            self.cur.execute(
+                "INSERT INTO WH VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                tuple(item))
             self.conn.commit()
         else:
             sql = '''
@@ -192,16 +191,17 @@ class ProGenPipeline:
                 t.append('')
             newitem.append(t)
 
-        args_str = b','.join(self.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in newitem).decode("utf-8") 
-        self.cur.execute("INSERT INTO cutting VALUES " + args_str) 
+        args_str = b','.join(self.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in newitem).decode("utf-8")
+        self.cur.execute("INSERT INTO cutting VALUES " + args_str)
         self.conn.commit()
 
     def store_casing(self, item):
-        args_str = b','.join(self.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8") 
-        self.cur.execute("INSERT INTO casing VALUES " + args_str) 
+        args_str = b','.join(
+            self.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+        self.cur.execute("INSERT INTO casing VALUES " + args_str)
         self.conn.commit()
-    
+
     def store_pf(self, item):
-        args_str = b','.join(self.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8") 
-        self.cur.execute("INSERT INTO Perforation VALUES " + args_str) 
+        args_str = b','.join(self.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+        self.cur.execute("INSERT INTO Perforation VALUES " + args_str)
         self.conn.commit()

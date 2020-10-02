@@ -6,6 +6,8 @@ import os
 from scrapy.http import Request
 
 CURRENTKID = ""
+
+
 class Crawler(scrapy.Spider):
     name = CRAWLER_NAME
     start_urls = [
@@ -25,7 +27,8 @@ class Crawler(scrapy.Spider):
         all_div = response.css("tr~ tr+ tr a:nth-child(1)").xpath("@href").extract()
 
         # for a in all_div:
-        yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayEng?f_kid=1044091564', callback=self.get_data)
+        yield response.follow(all_div[5],
+                              callback=self.get_data)
 
     def get_data(self, response):
         global CURRENTKID
@@ -50,10 +53,10 @@ class Crawler(scrapy.Spider):
                 self.items['wh'] = well_data2
                 CURRENTKID = well_data2[5].replace("\n", "")
 
-            initial_potential = response.css('table:nth-child(7) td+ td::text').extract()
+            initial_potential = response.css('table:nth-child(7) td ::text').extract()
 
             if initial_potential:
-                self.items['ip']: initial_potential
+                self.items['ip'] = initial_potential
 
             # casing_data = response.css("table:nth-child(9) th , table:nth-child(9) tr+ tr td::text").extract()
 
@@ -67,12 +70,20 @@ class Crawler(scrapy.Spider):
 
             headers = response.css('h3::text').extract()
             if "Cuttings Data" in headers:
-                cutting = response.css(f'table:nth-child({(headers.index("Cuttings Data")+1)*2}) ::text').extract()
+                cutting = response.css(f'table:nth-child({(headers.index("Cuttings Data") + 1) * 2}) ::text').extract()
                 if cutting:
                     self.items['cutting'] = cutting
 
             intent = response.css("li:nth-child(1) a").xpath("@href").extract()
-            intent_name = response.css("tr+ tr li a::text").extract()
+            intent_name = response.css("li:nth-child(1) a::text").extract()
+            for name in intent_name:
+                if name == "Intent To Drill Well":
+                    temp = intent[intent_name.index("Intent To Drill Well")]
+                    yield Request(
+                        url=response.urljoin(temp),
+                        callback=self.save_pdf
+                    )
+
             print(intent)
             # for href in response.css("li:nth-child(1) a").xpath("@href").extract():
             #     yield Request(
@@ -104,7 +115,7 @@ class Crawler(scrapy.Spider):
         initial_potential = response.css('table:nth-child(7) td ::text').extract()
 
         if initial_potential:
-            self.items['ip']: initial_potential
+            self.items['ip'] = initial_potential
 
         casing_data = response.css("table:nth-child(9) ::text").extract()
 
@@ -121,11 +132,20 @@ class Crawler(scrapy.Spider):
             self.items['cutting'] = cutting
 
         intent = response.css("li:nth-child(1) a").xpath("@href").extract()
-        intent_name = response.css("tr+ tr li a::text").extract()
+        intent_name = response.css("li:nth-child(1) a::text").extract()
         print(intent)
+
+        for name in intent_name:
+            if name == "Intent To Drill Well" :
+                temp = intent[intent_name.index("Intent To Drill Well")]
+                yield Request(
+                    url=response.urljoin(temp),
+                    callback=self.save_pdf
+                )
+
         # for href in response.css("li:nth-child(1) a").xpath("@href").extract():
         #     yield Request(
-        #         url=response.urljoin(href),
+        #         url=response.urljoin(intent[intent_name.index("Intent To Drill Well")]),
         #         callback=self.save_pdf
         #     )
         if intent:
@@ -145,4 +165,4 @@ class Crawler(scrapy.Spider):
         self.logger.info('Saving PDF %s', path)
         with open(path, 'wb') as file:
             file.write(response.body)
-    # path = os.path.join(os.getcwd(),"docs","123.pdf")
+
