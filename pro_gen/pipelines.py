@@ -62,7 +62,7 @@ class ProGenPipeline:
         whFilteredData.append(whRawData[whRawData.index('IP GAS (MCF): ') + 1])
         whFilteredData.append(whRawData[whRawData.index('KCC Permit No.: ') + 1])
 
-        self.store_wh(whFilteredData, extra)
+        # self.store_wh(whFilteredData, extra)
             
 
         essentials = [whFilteredData[0], whFilteredData[1]]
@@ -70,38 +70,56 @@ class ProGenPipeline:
         # if casing table is present, pass proper param
 
         try:
-            if 'Purpose of String' in item['casing']:
-                casingRawData = item['casing'][item['casing'].index('Additives') + 1:]
+            if item['casing']:
+                casingRawData = item['casing'][item['casing'].index('Additives') + 3:]
                 casingFilteredData = []
-                if len(casingRawData) % 7 == 0:
-                    for i in range(len(casingRawData) // 7):
-                        casingFilteredData.append(essentials + casingRawData[i * 7:(i + 1) * 7] + [""])
-                    self.store_casing(casingFilteredData)
-                elif len(casingRawData) % 8 == 0:
-                    for i in range(len(casingRawData) // 8):
-                        casingFilteredData.append(essentials + casingRawData[i * 8:(i + 1) * 8])
-                    self.store_casing(casingFilteredData)
+                for i in range(len(casingRawData)//17):
+                    temp = list()
+                    temp.extend(essentials)
+                    temp.extend(casingRawData[i*17+1:(i+1)*17:2])
+                    casingFilteredData.append(temp)
+                # self.store_casing(casingFilteredData)
         except:
             pass
         
 
-        try:
-            if 'Perforation record' in item['pf']:
-                pfRawData = item['pf'][item['pf'].index('Depth')+1:]
-                pfFilteredData = []
-                try:
-                    checklist = [int(pfRawData[i*4])for i in range(len(pfRawData)//4)]
-                    repeat = 4
-                    print("Zone 4")
-                    addition = []
-                except:
-                    repeat = 3
-                    print("Zone 3")
-                    addition = [""]
+        # if perforation table is present, pass proper param
 
-                for i in range(len(pfRawData)//repeat):
-                    pfFilteredData.append(essentials + pfRawData[i*repeat:(i+1)*repeat] + addition)
-                self.store_pf(pfFilteredData)
+        try:
+            if item['pf']:
+                pfRawData = item['pf'][item['pf'].index('Depth')+3:]
+                pfRawData = [i.replace('\n' ,"") for i in pfRawData]
+                pfFilteredData = []
+
+                for i in range(len(pfRawData)//9):
+                    temp = list()
+                    temp.extend(essentials)
+                    temp.extend(pfRawData[i*9+1:(i+1)*9:2])
+                    pfFilteredData.append(temp)
+                # self.store_pf(pfFilteredData)
+
+        except:
+            pass
+
+        # if cuttings table is present, pass proper param
+
+        try:
+            if item['cutting']:
+                cuttingRawData = []
+                cuttingRawDatatemp = item['cutting'][2:]
+                cuttingRawDatatemp = [i.replace('\n' ,"") for i in cuttingRawDatatemp]
+                filterString = '$_%&^%'.join(cuttingRawDatatemp)
+                filterList = filter(None, filterString.split("Box Number: "))
+                for sts in filterList:
+                    cuttingRawData.append(list(filter(None, sts.split('$_%&^%'))))
+                cuttingFilteredData = []
+
+                for j in cuttingRawData:
+                    temp = list()
+                    temp.extend(essentials)
+                    temp.extend(j[::2])
+                    cuttingFilteredData.append(temp)
+                self.store_cutting(cuttingFilteredData)
 
         except:
             pass
@@ -167,19 +185,15 @@ class ProGenPipeline:
         self.cur.execute(sql, tuple(item))
         self.conn.commit()
 
-    def store_cutting(self, item, kid):
-        sql = '''
-        INSERT INTO IP
-        KID,
-        Box_Number_1,
-        Starting_Depth_1,
-        Ending_Depth_1,
-        Box_Number_2,
-        Starting_Depth_2,
-        Ending_Depth_2 
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-        '''
-        self.cur.execute(sql, tuple(kid) + tuple(item))
+    def store_cutting(self, item):
+        newitem = []
+        for t in item:
+            while len(t) < 6:
+                t.append('')
+            newitem.append(t)
+
+        args_str = b','.join(self.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in newitem).decode("utf-8") 
+        self.cur.execute("INSERT INTO cutting VALUES " + args_str) 
         self.conn.commit()
 
     def store_casing(self, item):
