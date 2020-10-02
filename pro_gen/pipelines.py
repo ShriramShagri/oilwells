@@ -119,7 +119,7 @@ class ProGenPipeline:
                     temp.extend(essentials)
                     temp.extend(j[::2])
                     cuttingFilteredData.append(temp)
-                self.store_cutting(cuttingFilteredData)
+                # self.store_cutting(cuttingFilteredData)
 
         except:
             pass
