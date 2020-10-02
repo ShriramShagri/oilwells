@@ -27,7 +27,7 @@ class Crawler(scrapy.Spider):
         all_div = response.css("tr~ tr+ tr a:nth-child(1)").xpath("@href").extract()
 
         # for a in all_div:
-        yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1041231775',
+        yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1037989902',
                               callback=self.get_data)
 
     def get_data(self, response):
@@ -79,12 +79,14 @@ class Crawler(scrapy.Spider):
                 cutting = response.css('b+ ul a::text').extract()
                 
                 print(cutting, cuttinghref)
-
+                count = 0
                 for i in range(len(cutting)):
                     if cutting[i] in TODOWNLOAD:
+                        count += 1
                         yield Request(
                         url=response.urljoin(cuttinghref[i]),
-                        callback=self.save_pdf
+                        callback=self.save_file,
+                        meta={'filename' : cutting[i]+str(count)+"."+cuttinghref[i].split('.')[-1]}
                     )
 
             oil_production = response.css('h3+ p a').xpath("@href").extract()
@@ -132,12 +134,14 @@ class Crawler(scrapy.Spider):
             cutting = response.css('b+ ul a::text').extract()
             
             print(cutting, cuttinghref)
-
+            count = 0
             for i in range(len(cutting)):
                 if cutting[i] in TODOWNLOAD:
+                    count += 1
                     yield Request(
                     url=response.urljoin(cuttinghref[i]),
-                    callback=self.save_pdf
+                    callback=self.save_file,
+                    meta={'filename' : cutting[i]+str(count)+cuttinghref[i].split('.')[-1]}
                 )
 
         oil_production = response.css('h3+ p a').xpath("@href").extract()
@@ -146,11 +150,12 @@ class Crawler(scrapy.Spider):
 
         yield self.items
 
-    def save_pdf(self, response):
+    def save_file(self, response):
+        filename = response.meta.get('filename')
         cwd = os.getcwd()
         if not os.path.isdir(os.path.join(cwd, "docs", CURRENTKID)):
             os.mkdir(os.path.join(cwd, "docs", CURRENTKID))
-        path = os.path.join(cwd, "docs", CURRENTKID, f"{CURRENTKID}.pdf")
+        path = os.path.join(cwd, "docs", CURRENTKID, filename)
         self.logger.info('Saving PDF %s', path)
         with open(path, 'wb') as file:
             file.write(response.body)
