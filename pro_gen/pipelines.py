@@ -13,50 +13,49 @@ from .constants import *
 class ProGenPipeline:
     def __init__(self):
         self.conn = psycopg2.connect(
-                            host=HOST,
-                            database=DATABASE,
-                            user=USER,
-                            password=PASSWORD
-                            )
+            host=HOST,
+            database=DATABASE,
+            user=USER,
+            password=PASSWORD
+        )
         self.cur = self.conn.cursor()
-
 
     def process_item(self, item, spider):
         # if wh table is present, pass proper param
 
-        whRawData = [i.replace('\n' ,"") for i in item['wh']]
+        whRawData = [i.replace('\n', "") for i in item['wh']]
 
         if whRawData[18] == '\n':
-            whFilteredData = whRawData[1:14:2] + whRawData[15:17] + whRawData[18:25:2] +whRawData[27::2]
+            whFilteredData = whRawData[1:14:2] + whRawData[15:17] + whRawData[18:25:2] + whRawData[27::2]
             self.store_wh(whFilteredData, False)
-            
+
         else:
-            whFilteredData = whRawData[1:14:2] + whRawData[15:18] + whRawData[19:26:2] +whRawData[28::2]
+            whFilteredData = whRawData[1:14:2] + whRawData[15:18] + whRawData[19:26:2] + whRawData[28::2]
             self.store_wh(whFilteredData, True)
 
         essentials = [whFilteredData[0], whFilteredData[1]]
 
-
         # if casing table is present, pass proper param
 
-        if item['casing']:
+        try:
             if 'Purpose of String' in item['casing']:
-                casingRawData = item['casing'][item['casing'].index('Additives')+1:]
+                casingRawData = item['casing'][item['casing'].index('Additives') + 1:]
                 casingFilteredData = []
                 if len(casingRawData) % 7 == 0:
-                    for i in range(len(casingRawData)//7):
-                        casingFilteredData.append(essentials + casingRawData[i*7:(i+1)*7] + [""])
+                    for i in range(len(casingRawData) // 7):
+                        casingFilteredData.append(essentials + casingRawData[i * 7:(i + 1) * 7] + [""])
                     self.store_casing(casingFilteredData)
                 elif len(casingRawData) % 8 == 0:
-                    for i in range(len(casingRawData)//8):
-                        casingFilteredData.append(essentials + casingRawData[i*8:(i+1)*8])
+                    for i in range(len(casingRawData) // 8):
+                        casingFilteredData.append(essentials + casingRawData[i * 8:(i + 1) * 8])
                     self.store_casing(casingFilteredData)
-
+        except:
+            pass
         return item
 
     def store_wh(self, item, extra):
         if extra:
-            while len(item)>28:
+            while len(item) > 28:
                 del item[-2]
             sql = '''
             INSERT INTO WH 
@@ -93,7 +92,7 @@ class ProGenPipeline:
             self.cur.execute(sql, tuple(item))
             self.conn.commit()
         else:
-            while len(item)>=28:
+            while len(item) >= 28:
                 del item[-2]
             sql = '''
             INSERT INTO WH 
@@ -128,7 +127,7 @@ class ProGenPipeline:
             '''
             self.cur.execute(sql, tuple(item))
             self.conn.commit()
-    
+
     def store_ip(self, item):
         sql = '''
         INSERT INTO IP
@@ -147,7 +146,6 @@ class ProGenPipeline:
         '''
         self.cur.execute(sql, tuple(item))
         self.conn.commit()
-    
 
     def store_cutting(self, item, kid):
         sql = '''
@@ -163,7 +161,7 @@ class ProGenPipeline:
         '''
         self.cur.execute(sql, tuple(kid) + tuple(item))
         self.conn.commit()
-    
+
     def store_casing(self, item):
         # sql = '''
         # INSERT INTO IP
@@ -179,11 +177,12 @@ class ProGenPipeline:
         # Type_And_Percent_Additives)
         # VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         # '''
-        args_str = b','.join(self.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8") 
-        self.cur.execute("INSERT INTO casing VALUES " + args_str) 
+        args_str = b','.join(
+            self.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+        self.cur.execute("INSERT INTO casing VALUES " + args_str)
         # self.cur.execute(sql, tuple(item))
         self.conn.commit()
-    
+
     def store_perforation(self, item, kid):
         sql = '''
         INSERT INTO IP
