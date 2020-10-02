@@ -54,11 +54,6 @@ class ProGenPipeline:
                 whFilteredData.append(whRawData[whRawData.index(WHCOLUMS[clms]) + 1])
             else:
                whFilteredData.append("") 
-        try:
-            whFilteredData.append(whRawData[whRawData.index(WHCOLUMS[-1]) + 1])
-            print('Tried')
-        except:
-            whFilteredData.append("")
 
         # self.store_wh(whFilteredData)
 
@@ -73,40 +68,12 @@ class ProGenPipeline:
         if item['ip']:
             ipRawData = [i.replace('\n', "") for i in item['ip']]
             ipFilteredData = []
-            # IPDOWNLOAD = []
-            ipFilteredData.append(ipRawData[ipRawData.index('Producing Method: ') + 1])
-            if checklist('\xa0\xa0\xa0\xa0Oil: ', '\xa0\xa0\xa0\xa0Water: ', ipRawData):
-                ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Oil: ') + 1])
-            else:
-                ipFilteredData.append('')
-            if checklist('\xa0\xa0\xa0\xa0Water: ', '\xa0\xa0\xa0\xa0Gas: ', ipRawData):
-                ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Water: ') + 1])
-            else:
-                ipFilteredData.append('')
-            if checklist('\xa0\xa0\xa0\xa0Gas: ', 'Disposition of Gas: ', ipRawData):
-                ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Gas: ') + 1])
-            else:
-                ipFilteredData.append('')
-            if checklist('Disposition of Gas: ', '\xa0\xa0\xa0\xa0Size: ', ipRawData):
-                ipFilteredData.append(ipRawData[ipRawData.index('Disposition of Gas: ') + 1])
-            else:
-                ipFilteredData.append('')
-            if checklist('\xa0\xa0\xa0\xa0Size: ', '\xa0\xa0\xa0\xa0Set at: ', ipRawData):
-                ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Size: ') + 1])
-            else:
-                ipFilteredData.append('')
-            if checklist('\xa0\xa0\xa0\xa0Set at: ', '\xa0\xa0\xa0\xa0Packer at: ', ipRawData):
-                ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Set at: ') + 1])
-            else:
-                ipFilteredData.append('')
-            if checklist('\xa0\xa0\xa0\xa0Packer at: ', 'Production intervals: ', ipRawData):
-                ipFilteredData.append(ipRawData[ipRawData.index('\xa0\xa0\xa0\xa0Packer at: ') + 1])
-            else:
-                ipFilteredData.append('')
-            try:
-                ipFilteredData.append(ipRawData[ipRawData.index('Production intervals: ') + 1])
-            except:
-                ipFilteredData.append('')
+
+            for clms in range(len(IPCOLUMNS)-1):
+                if checklist(IPCOLUMNS[clms], IPCOLUMNS[clms + 1], ipRawData):
+                    ipFilteredData.append(ipRawData[ipRawData.index(IPCOLUMNS[clms]) + 1])
+                else:
+                    ipFilteredData.append("") 
             
             tem = list(essentials)
             tem.extend(ipFilteredData)
