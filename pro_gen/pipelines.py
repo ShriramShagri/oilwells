@@ -55,7 +55,7 @@ class ProGenPipeline:
             else:
                whFilteredData.append("") 
 
-        # self.store_wh(whFilteredData)
+        self.store_wh(whFilteredData)
 
         essentials = [whFilteredData[0], whFilteredData[1]]
 
@@ -83,36 +83,36 @@ class ProGenPipeline:
 
         # if casing table is present, pass proper param
 
-        try:
-            if item['casing']:
-                casingRawData = item['casing'][item['casing'].index('Additives') + 3:]
-                casingFilteredData = []
-                for i in range(len(casingRawData) // 17):
-                    temp = list()
-                    temp.extend(essentials)
-                    temp.extend(casingRawData[i * 17 + 1:(i + 1) * 17:2])
-                    casingFilteredData.append(temp)
-                # self.store_casing(casingFilteredData)
-        except:
-            pass
+        # try:
+        if item['casing']:
+            casingRawData = item['casing'][item['casing'].index('Additives') + 3:]
+            casingFilteredData = []
+            for i in range(len(casingRawData) // 17):
+                temp = list()
+                temp.extend(essentials)
+                temp.extend(casingRawData[i * 17 + 1:(i + 1) * 17:2])
+                casingFilteredData.append(temp)
+            self.store_casing(casingFilteredData)
+        # except:
+        #     pass
 
         # if perforation table is present, pass proper param
 
-        try:
-            if item['pf']:
-                pfRawData = item['pf'][item['pf'].index('Depth') + 3:]
-                pfRawData = [i.replace('\n', "") for i in pfRawData]
-                pfFilteredData = []
+        # try:
+        if item['pf']:
+            pfRawData = item['pf'][item['pf'].index('Depth') + 3:]
+            pfRawData = [i.replace('\n', "") for i in pfRawData]
+            pfFilteredData = []
 
-                for i in range(len(pfRawData) // 9):
-                    temp = list()
-                    temp.extend(essentials)
-                    temp.extend(pfRawData[i * 9 + 1:(i + 1) * 9:2])
-                    pfFilteredData.append(temp)
-                # self.store_pf(pfFilteredData)
+            for i in range(len(pfRawData) // 9):
+                temp = list()
+                temp.extend(essentials)
+                temp.extend(pfRawData[i * 9 + 1:(i + 1) * 9:2])
+                pfFilteredData.append(temp)
+            self.store_pf(pfFilteredData)
 
-        except:
-            pass
+        # except:
+        #     pass
 
         # if cuttings table is present, pass proper param
 
@@ -132,7 +132,7 @@ class ProGenPipeline:
                     temp.extend(essentials)
                     temp.extend(j[::2])
                     cuttingFilteredData.append(temp)
-                # self.store_cutting(cuttingFilteredData)
+                self.store_cutting(cuttingFilteredData)
 
         except:
             pass
