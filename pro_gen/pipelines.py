@@ -8,6 +8,8 @@
 from itemadapter import ItemAdapter
 import psycopg2
 from .constants import *
+import csv
+import os
 
 
 class ProGenPipeline:
@@ -55,64 +57,78 @@ class ProGenPipeline:
             else:
                whFilteredData.append("") 
 
-        self.store_wh(whFilteredData)
+        # self.store_wh(whFilteredData)
 
         essentials = [whFilteredData[0], whFilteredData[1]]
 
 
          # if casing table is present, pass proper param
 
+        path = os.path.join(os.getcwd(), 'docs', essentials[-1], 'oil_production.txt')
+        if os.path.exists(path):
+            savepath = os.path.join(os.getcwd(), 'docs', essentials[-1], 'oil_production.csv')
+            with open(path, 'r') as in_file:
+                stripped = (line.strip().replace('"', '') for line in in_file)
+                templines =  [line.split(",") for line in stripped if line]
+                lines = []
+                for l in templines:
+                    lines.append(tuple(essentials) + tuple(l))
+                with open(savepath, 'w', newline='') as out_file:
+                    writer = csv.writer(out_file)
+                    writer.writerows(lines)
+            self.updateOil(savepath, path)
+
         
 
-        # try:
-        if item['ip']:
-            ipRawData = [i.replace('\n', "") for i in item['ip']]
-            ipFilteredData = []
+        try:
+            if item['ip']:
+                ipRawData = [i.replace('\n', "") for i in item['ip']]
+                ipFilteredData = []
 
-            for clms in range(len(IPCOLUMNS)-1):
-                if checklist(IPCOLUMNS[clms], IPCOLUMNS[clms + 1], ipRawData):
-                    ipFilteredData.append(ipRawData[ipRawData.index(IPCOLUMNS[clms]) + 1])
-                else:
-                    ipFilteredData.append("") 
-            
-            tem = list(essentials)
-            tem.extend(ipFilteredData)
-            self.store_ip(tem)
-        # except:
-        #     pass
+                for clms in range(len(IPCOLUMNS)-1):
+                    if checklist(IPCOLUMNS[clms], IPCOLUMNS[clms + 1], ipRawData):
+                        ipFilteredData.append(ipRawData[ipRawData.index(IPCOLUMNS[clms]) + 1])
+                    else:
+                        ipFilteredData.append("") 
+                
+                tem = list(essentials)
+                tem.extend(ipFilteredData)
+                # self.store_ip(tem)
+        except:
+            pass
 
         # if casing table is present, pass proper param
 
-        # try:
-        if item['casing']:
-            casingRawData = item['casing'][item['casing'].index('Additives') + 3:]
-            casingFilteredData = []
-            for i in range(len(casingRawData) // 17):
-                temp = list()
-                temp.extend(essentials)
-                temp.extend(casingRawData[i * 17 + 1:(i + 1) * 17:2])
-                casingFilteredData.append(temp)
-            self.store_casing(casingFilteredData)
-        # except:
-        #     pass
+        try:
+            if item['casing']:
+                casingRawData = item['casing'][item['casing'].index('Additives') + 3:]
+                casingFilteredData = []
+                for i in range(len(casingRawData) // 17):
+                    temp = list()
+                    temp.extend(essentials)
+                    temp.extend(casingRawData[i * 17 + 1:(i + 1) * 17:2])
+                    casingFilteredData.append(temp)
+                # self.store_casing(casingFilteredData)
+        except:
+            pass
 
         # if perforation table is present, pass proper param
 
-        # try:
-        if item['pf']:
-            pfRawData = item['pf'][item['pf'].index('Depth') + 3:]
-            pfRawData = [i.replace('\n', "") for i in pfRawData]
-            pfFilteredData = []
+        try:
+            if item['pf']:
+                pfRawData = item['pf'][item['pf'].index('Depth') + 3:]
+                pfRawData = [i.replace('\n', "") for i in pfRawData]
+                pfFilteredData = []
 
-            for i in range(len(pfRawData) // 9):
-                temp = list()
-                temp.extend(essentials)
-                temp.extend(pfRawData[i * 9 + 1:(i + 1) * 9:2])
-                pfFilteredData.append(temp)
-            self.store_pf(pfFilteredData)
+                for i in range(len(pfRawData) // 9):
+                    temp = list()
+                    temp.extend(essentials)
+                    temp.extend(pfRawData[i * 9 + 1:(i + 1) * 9:2])
+                    pfFilteredData.append(temp)
+                # self.store_pf(pfFilteredData)
 
-        # except:
-        #     pass
+        except:
+            pass
 
         # if cuttings table is present, pass proper param
 
@@ -132,12 +148,20 @@ class ProGenPipeline:
                     temp.extend(essentials)
                     temp.extend(j[::2])
                     cuttingFilteredData.append(temp)
-                self.store_cutting(cuttingFilteredData)
+                # self.store_cutting(cuttingFilteredData)
 
         except:
             pass
 
         return item
+    
+    def updateOil(self, path, delpath):
+        with open(path, 'r') as f:
+            next(f) # Skip the header row.
+            self.cur.copy_from(f, 'oilProduction', sep=',')
+
+        self.conn.commit()
+        # os.unlink(delpath)
 
     def store_wh(self, item):
         self.cur.execute(
