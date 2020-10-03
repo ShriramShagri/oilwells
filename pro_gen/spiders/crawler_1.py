@@ -17,6 +17,9 @@ class Crawler(scrapy.Spider):
     ]
 
     def parse(self, response):
+        self.items = ProGenItem()
+
+        #  Fill the main form Below
         return FormRequest.from_response(response, formdata={
             'ew': 'W',
             'f_st': '15',
@@ -25,15 +28,20 @@ class Crawler(scrapy.Spider):
         }, callback=self.start_scraping)
 
     def start_scraping(self, response):
-        self.items = ProGenItem()
-        all_div = response.css("tr~ tr+ tr a:nth-child(1)").xpath("@href").extract()
+        # Collect all links from fist column
 
-        # for a in all_div:
+        wellColumn = response.css("tr~ tr+ tr a:nth-child(1)").xpath("@href").extract()
+
+        # Itetrate Through All links per page
+        # for a in wellColumn:
         yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1002880481',
                               callback=self.get_data)
 
     def get_data(self, response):
+        # Use KID of current link for file and folder names
         global CURRENTKID
+
+        # Check if Engineering Data Page is present
         toggleEngineering = response.css("hr+ table a").xpath("@href").extract()
         toggleEngineeringText = response.css("hr+ table a::text").extract()
 
@@ -69,7 +77,6 @@ class Crawler(scrapy.Spider):
             #     self.items['pf'] = perforation_data
 
             headers = response.css('h3::text').extract()
-            print(headers)
             if "Cuttings Data" in headers:
                 cutting = response.css(f'table:nth-child({(headers.index("Cuttings Data") + 1) * 2}) ::text').extract()
                 if cutting:
@@ -86,7 +93,6 @@ class Crawler(scrapy.Spider):
                 cuttinghref = response.css('b+ ul a::attr(href)').extract()
                 cutting = response.css('b+ ul a::text').extract()
                 
-                print(cutting, cuttinghref)
                 count = 0
                 for i in range(len(cutting)):
                     if cutting[i] in TODOWNLOAD:
@@ -152,16 +158,22 @@ class Crawler(scrapy.Spider):
             self.items['pf'] = perforation_data
 
         headers = response.css('h3::text').extract()
-        print(headers)
+
         if "Cuttings Data" in headers:
-            cutting = response.css(f'table:nth-child({(headers.index("Cuttings Data") + 1) * 2}) ::text').extract()
-            if cutting:
-                self.items['cutting'] = cutting
+                cutting = response.css(f'table:nth-child({(headers.index("Cuttings Data") + 1) * 2}) ::text').extract()
+                if cutting:
+                    if 3 < len(cutting) < 15:
+                        self.items['cutting'] = cutting
+                else:
+                    cutting = response.css(f'table:nth-child({headers.index("Cuttings Data") * 2}) ::text').extract()
+                    if cutting:
+                        if 3 < len(cutting) < 15:
+                            self.items['cutting'] = cutting
+
         if "ACO-1 and Driller's Logs" in headers:
             cuttinghref = response.css('b+ ul a::attr(href)').extract()
             cutting = response.css('b+ ul a::text').extract()
             
-            print(cutting, cuttinghref)
             count = 0
             for i in range(len(cutting)):
                 if cutting[i] in TODOWNLOAD:
@@ -171,10 +183,13 @@ class Crawler(scrapy.Spider):
                     callback=self.save_file,
                     meta={'filename' : cutting[i]+str(count)+cuttinghref[i].split('.')[-1]}
                 )
+            
+        if "Oil Production Data" in headers:
+                oil_production = response.css('h3+ p a').xpath("@href").extract()
+                # print(oil_production)
 
-        oil_production = response.css('h3+ p a').xpath("@href").extract()
-        if oil_production:
-            page_data['oil_production_data'] = oil_production
+                if oil_production:
+                    yield response.follow(oil_production.pop().replace('.MainLease?', '.MonthSave?'), callback=self.getOilData, meta={'kid': CURRENTKID})
 
         yield self.items
 
