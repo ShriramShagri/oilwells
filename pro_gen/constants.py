@@ -1,8 +1,8 @@
 # Database
 HOST = 'localhost'
 USER = 'postgres'
-PASSWORD = '123456'
-DATABASE = 'oilwells'
+PASSWORD = 'lynx1729'
+DATABASE = 'oilWells'
 
 # Counties
 
