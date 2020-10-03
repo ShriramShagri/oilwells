@@ -17,6 +17,9 @@ class Crawler(scrapy.Spider):
     ]
 
     def parse(self, response):
+        '''
+        Overrided function " Let's Start Scraping!!"
+        '''
         self.items = ProGenItem()
 
         #  Fill the main form Below
@@ -28,94 +31,137 @@ class Crawler(scrapy.Spider):
         }, callback=self.start_scraping)
 
     def start_scraping(self, response):
-        # Collect all links from fist column
+        '''
+        This function is used to collect all links in the column per page and iterate through all of them
+        '''
 
         wellColumn = response.css("tr~ tr+ tr a:nth-child(1)").xpath("@href").extract()
 
         # Itetrate Through All links per page
+
         # for a in wellColumn:
         yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1002880481',
                               callback=self.get_data)
 
     def get_data(self, response):
+        '''
+        This function is used to Data from general page
+        '''
         # Use KID of current link for file and folder names
+
         global CURRENTKID
 
         # Check if Engineering Data Page is present
+
         toggleEngineering = response.css("hr+ table a").xpath("@href").extract()
         toggleEngineeringText = response.css("hr+ table a::text").extract()
+
+        # Change function if Engineering Data Page is found
 
         if toggleEngineeringText[0] == "View Engineering Data" and toggleEngineering:
             yield response.follow(toggleEngineering[0], callback=self.get_tables)
         else:
             page_data = dict()
 
+            # Collect WH table and Send to Pipeline (Multiple css elector path might be present)
+
             well_data = response.css('hr+ table tr:nth-child(1) ::text').extract()
 
             well_data2 = response.css("table:nth-child(5) tr:nth-child(1) ::text").extract()
 
+            # Simple check for valid data
             if len(well_data) > 50:
                 self.items['wh'] = well_data
+                # Set KID for current link
                 CURRENTKID = well_data[5].replace("\n", "")
             elif len(well_data2) > 50:
                 self.items['wh'] = well_data2
+                # Set KID for current link
                 CURRENTKID = well_data2[5].replace("\n", "")
+
+            # Collect WH table and Send to Pipeline (Multiple css elector path might be present)
+
+            # FATAL: CSS SELECTOR TO BE FIXED!!!
 
             initial_potential = response.css('table:nth-child(7) td ::text').extract()
 
             if initial_potential:
                 self.items['ip'] = initial_potential
 
+            # Collect Casing table and Send to Pipeline (Multiple css elector path might be present)
+            
+            # FATAL: CSS SELECTOR TO BE FIXED!!!
+
+
             # casing_data = response.css("table:nth-child(9) th , table:nth-child(9) tr+ tr td::text").extract()
 
             # if casing_data:
             #     self.items['casing'] = casing_data
+
+            # Collect Pf table and Send to Pipeline (Multiple css elector path might be present)
+            
+            # FATAL: CSS SELECTOR TO BE FIXED!!!
+
             #
             # perforation_data = response.css("table:nth-child(13)::text").extract()
             #
             # if perforation_data:
             #     self.items['pf'] = perforation_data
 
+            # Get All H3 tags to recognise all tables in the page
+
             headers = response.css('h3::text').extract()
+
+            # check if cuttings tabale is present, if present, Send to pipeline
+
             if "Cuttings Data" in headers:
                 cutting = response.css(f'table:nth-child({(headers.index("Cuttings Data") + 1) * 2}) ::text').extract()
                 if cutting:
                     if 3 < len(cutting) < 15:
                         self.items['cutting'] = cutting
                 else:
-                    cutting = response.css(f'table:nth-child({headers.index("Cuttings Data") * 2}) ::text').extract()
+                    cutting = response.css(f'table:nth-child({headers.index("Cuttings Data") * 2}) ::text').extract() # Care to be taken if multiple css selectors are present
                     if cutting:
                         if 3 < len(cutting) < 15:
                             self.items['cutting'] = cutting
 
+            # Check for all pdfs present and download. To manage all the pdfs that get downloaded, goto constants.py file
 
             if "ACO-1 and Driller's Logs" in headers:
-                cuttinghref = response.css('b+ ul a::attr(href)').extract()
-                cutting = response.css('b+ ul a::text').extract()
+                pdfherf = response.css('b+ ul a::attr(href)').extract()
+                pdf = response.css('b+ ul a::text').extract()
                 
                 count = 0
-                for i in range(len(cutting)):
-                    if cutting[i] in TODOWNLOAD:
+                for i in range(len(pdf)):
+                    if pdf[i] in TODOWNLOAD:
                         count += 1
                         yield Request(
-                        url=response.urljoin(cuttinghref[i]),
+                        url=response.urljoin(pdfherf[i]),
                         callback=self.save_file,
-                        meta={'filename' : cutting[i]+str(count)+"."+cuttinghref[i].split('.')[-1]}
+                        meta={'filename' : pdf[i]+str(count)+"."+pdfherf[i].split('.')[-1]}
                     )
+
+            # Check for oil Production page. If so redirect and initiate .txt file Download
 
             if "Oil Production Data" in headers:
                 oil_production = response.css('h3+ p a').xpath("@href").extract()
                 # print(oil_production)
 
                 if oil_production:
-                    yield response.follow(oil_production.pop().replace('.MainLease?', '.MonthSave?'), callback=self.getOilData, meta={'kid': CURRENTKID})
+                    yield response.follow(oil_production.pop().replace('.MainLease?', '.MonthSave?'), callback=self.getOilData, meta={'kid': CURRENTKID}) # replace mainlease to skip a page
                     
-
             yield self.items
 
     def getOilData(self, response):
+        '''
+        This function is used to redirect and initiate file download for Oil Production Data
+        '''
+        # get KID from metadata
+
         ckid = response.meta.get('kid')
         proceed = False
+
+        #  Get txt file link and download
 
         oil_data_href = response.css('a').xpath('@href').extract()
         for item in oil_data_href:
@@ -130,6 +176,9 @@ class Crawler(scrapy.Spider):
             
 
     def get_tables(self, response):
+        '''
+        This function is used to Data from engineering page
+        '''
         global CURRENTKID
         page_data = dict()
         # Add main table
@@ -186,7 +235,6 @@ class Crawler(scrapy.Spider):
             
         if "Oil Production Data" in headers:
                 oil_production = response.css('h3+ p a').xpath("@href").extract()
-                # print(oil_production)
 
                 if oil_production:
                     yield response.follow(oil_production.pop().replace('.MainLease?', '.MonthSave?'), callback=self.getOilData, meta={'kid': CURRENTKID})
@@ -194,36 +242,70 @@ class Crawler(scrapy.Spider):
         yield self.items
 
     def save_file(self, response):
+        '''
+        This function is used for downloading files
+        '''
+        # Get filename from metadata
+
         filename = response.meta.get('filename')
+
+        # Setup appropriate path and create directory
+
         cwd = os.getcwd()
         if not os.path.isdir(os.path.join(cwd, "docs", CURRENTKID)):
             os.mkdir(os.path.join(cwd, "docs", CURRENTKID))
+
         path = os.path.join(cwd, "docs", CURRENTKID, filename)
+
+        # Save the file
+
         self.logger.info('Saving PDF %s', path)
         with open(path, 'wb') as file:
             file.write(response.body)
     
     def save_oil_data(self, response):
+        '''
+        This function reads oil production txt file and saves it first
+        then writs the content fron text file to csv and saves the contents in postgres
+        '''
+        # Collect filename and KID from metadata
+
         filename = response.meta.get('filename')
         kid = response.meta.get('kid')
+
+        # Setup appropriate path and create directory
+
         cwd = os.getcwd()
-        if not os.path.isdir(os.path.join(cwd, "docs", CURRENTKID)):
-            os.mkdir(os.path.join(cwd, "docs", CURRENTKID))
-        path = os.path.join(cwd, "docs", CURRENTKID, filename)
-        dirpath = os.path.join(cwd, "docs", CURRENTKID)
+        if not os.path.isdir(os.path.join(cwd, "docs", kid)):
+            os.mkdir(os.path.join(cwd, "docs", kid))
+
+        path = os.path.join(cwd, "docs", kid, filename)
+        dirpath = os.path.join(cwd, "docs", kid)
+
         self.logger.info('Saving txt %s', path)
+
+        # Write the text file
+
         with open(path, 'wb') as file:
             file.write(response.body)
+
+        # read downloaded text file and convert to csv(add required columns too)
+
         with open(path, 'r') as in_file:
             stripped = (line.strip().replace('"', '') for line in in_file)
             templines =  [line.split(",") for line in stripped if line]
             lines = []
             for l in templines:
                 lines.append(tuple([kid]) + tuple(l))
+            
+            # Write to csv file 
+
             with open(os.path.join(dirpath, filename.split('.')[0] + ".csv"), 'w', newline='') as out_file:
                 writer = csv.writer(out_file)
                 writer.writerows(lines)
         
+        # Save to database
+
         with open(os.path.join(dirpath, filename.split('.')[0] + ".csv"), 'r') as f:
             next(f) # Skip the header row.
             DATABASE.cur.copy_from(f, 'oilProduction', sep=',')
