@@ -1,8 +1,23 @@
+import psycopg2
 # Database
 HOST = 'localhost'
 USER = 'postgres'
 PASSWORD = 'lynx1729'
 DATABASE = 'oilWells'
+
+class db:
+    def __init__(self):
+        self.conn = psycopg2.connect(
+            host=HOST,
+            database=DATABASE,
+            user=USER,
+            password=PASSWORD
+        )
+        self.cur = self.conn.cursor()
+
+DATABASE = db()
+
+
 
 # Counties
 
