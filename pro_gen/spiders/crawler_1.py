@@ -3,6 +3,7 @@ from scrapy.http import FormRequest
 from ..items import ProGenItem
 from ..constants import *
 import os
+import csv
 from scrapy.http import Request
 
 CURRENTKID = ""
@@ -28,7 +29,7 @@ class Crawler(scrapy.Spider):
         all_div = response.css("tr~ tr+ tr a:nth-child(1)").xpath("@href").extract()
 
         # for a in all_div:
-        yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1038834357',
+        yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1002880481',
                               callback=self.get_data)
 
     def get_data(self, response):
@@ -74,27 +75,55 @@ class Crawler(scrapy.Spider):
             if "Cuttings Data" in headers:
                 cutting = response.css(f'table:nth-child({(headers.index("Cuttings Data") + 1) * 2}) ::text').extract()
                 if cutting:
-                    self.items['cutting'] = cutting
+                    if 3 < len(cutting) < 15:
+                        self.items['cutting'] = cutting
+                else:
+                    cutting = response.css(f'table:nth-child({headers.index("Cuttings Data") * 2}) ::text').extract()
+                    if cutting:
+                        if 3 < len(cutting) < 15:
+                            self.items['cutting'] = cutting
+
+
             if "ACO-1 and Driller's Logs" in headers:
                 cuttinghref = response.css('b+ ul a::attr(href)').extract()
                 cutting = response.css('b+ ul a::text').extract()
                 
                 print(cutting, cuttinghref)
-                count = 0
-                for i in range(len(cutting)):
-                    if cutting[i] in TODOWNLOAD:
-                        count += 1
-                        yield Request(
-                        url=response.urljoin(cuttinghref[i]),
-                        callback=self.save_file,
-                        meta={'filename' : cutting[i]+str(count)+"."+cuttinghref[i].split('.')[-1]}
-                    )
+                # count = 0
+                # for i in range(len(cutting)):
+                #     if cutting[i] in TODOWNLOAD:
+                #         count += 1
+                #         yield Request(
+                #         url=response.urljoin(cuttinghref[i]),
+                #         callback=self.save_file,
+                #         meta={'filename' : cutting[i]+str(count)+"."+cuttinghref[i].split('.')[-1]}
+                #     )
 
-            oil_production = response.css('h3+ p a').xpath("@href").extract()
-            if oil_production:
-                page_data['oil_production_data'] = oil_production
+            if "Oil Production Data" in headers:
+                oil_production = response.css('h3+ p a').xpath("@href").extract()
+                # print(oil_production)
+
+                if oil_production:
+                    yield response.follow(oil_production.pop().replace('.MainLease?', '.MonthSave?'), callback=self.getOilData, meta={'kid': CURRENTKID})
+                    
 
             yield self.items
+
+    def getOilData(self, response):
+        ckid = response.meta.get('kid')
+        proceed = False
+
+        oil_data_href = response.css('a').xpath('@href').extract()
+        for item in oil_data_href:
+            if item.split('.').pop() == 'txt':
+                proceed = item
+        if proceed:
+            yield Request(
+                    url=response.urljoin(oil_data_href[-1]),
+                    callback=self.save_csv,
+                    meta={'filename' : "oil_production.csv", 'kid' : ckid}
+                    )
+            
 
     def get_tables(self, response):
         global CURRENTKID
@@ -160,4 +189,23 @@ class Crawler(scrapy.Spider):
         self.logger.info('Saving PDF %s', path)
         with open(path, 'wb') as file:
             file.write(response.body)
+    
+    def save_csv(self, response):
+        filename = response.meta.get('filename')
+        kid = response.meta.get('kid')
+        cwd = os.getcwd()
+        if not os.path.isdir(os.path.join(cwd, "docs", CURRENTKID)):
+            os.mkdir(os.path.join(cwd, "docs", CURRENTKID))
+        path = os.path.join(cwd, "docs", CURRENTKID, filename)
+        self.logger.info('Saving PDF %s', path)
+        stripped = (line.strip().replace('"', '') for line in response.body)
+        templines =  [line.split(",") for line in stripped if line]
+        lines = []
+        for l in templines:
+            lines.append((kid) + tuple(l))
+        with open(path, 'w', newline='') as out_file:
+            writer = csv.writer(out_file)
+            writer.writerows(lines)
+        # with open(path, 'wb') as file:
+        #     file.write(response.body)
 
