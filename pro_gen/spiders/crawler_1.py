@@ -198,26 +198,22 @@ class Crawler(scrapy.Spider):
             os.mkdir(os.path.join(cwd, "docs", CURRENTKID))
         path = os.path.join(cwd, "docs", CURRENTKID, filename)
         dirpath = os.path.join(cwd, "docs", CURRENTKID)
-        self.logger.info('Saving PDF %s', path)
+        self.logger.info('Saving txt %s', path)
         with open(path, 'wb') as file:
             file.write(response.body)
         with open(path, 'r') as in_file:
             stripped = (line.strip().replace('"', '') for line in in_file)
             templines =  [line.split(",") for line in stripped if line]
             lines = []
-            # print(lines)
             for l in templines:
                 lines.append(tuple([kid]) + tuple(l))
-            # print(lines)
             with open(os.path.join(dirpath, filename.split('.')[0] + ".csv"), 'w', newline='') as out_file:
                 writer = csv.writer(out_file)
                 writer.writerows(lines)
         
-        with open(path, 'r') as f:
+        with open(os.path.join(dirpath, filename.split('.')[0] + ".csv"), 'r') as f:
             next(f) # Skip the header row.
             DATABASE.cur.copy_from(f, 'oilProduction', sep=',')
 
         DATABASE.conn.commit()
-        # with open(path, 'wb') as file:
-        #     file.write(response.body)
 
