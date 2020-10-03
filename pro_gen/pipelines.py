@@ -12,15 +12,16 @@ import csv
 import os
 
 
-class ProGenPipeline:
+class ProGenPipeline(db):
     def __init__(self):
-        self.conn = psycopg2.connect(
-            host=HOST,
-            database=DATABASE,
-            user=USER,
-            password=PASSWORD
-        )
-        self.cur = self.conn.cursor()
+        pass
+        # self.conn = psycopg2.connect(
+        #     host=HOST,
+        #     database=DATABASE,
+        #     user=USER,
+        #     password=PASSWORD
+        # )
+        # self.cur = self.conn.cursor()
 
     def process_item(self, item, spider):
 
@@ -64,19 +65,19 @@ class ProGenPipeline:
 
          # if casing table is present, pass proper param
 
-        path = os.path.join(os.getcwd(), 'docs', essentials[-1], 'oil_production.txt')
-        if os.path.exists(path):
-            savepath = os.path.join(os.getcwd(), 'docs', essentials[-1], 'oil_production.csv')
-            with open(path, 'r') as in_file:
-                stripped = (line.strip().replace('"', '') for line in in_file)
-                templines =  [line.split(",") for line in stripped if line]
-                lines = []
-                for l in templines:
-                    lines.append(tuple(essentials) + tuple(l))
-                with open(savepath, 'w', newline='') as out_file:
-                    writer = csv.writer(out_file)
-                    writer.writerows(lines)
-            self.updateOil(savepath, path)
+        # path = os.path.join(os.getcwd(), 'docs', essentials[-1], 'oil_production.txt')
+        # if os.path.exists(path):
+        #     savepath = os.path.join(os.getcwd(), 'docs', essentials[-1], 'oil_production.csv')
+        #     with open(path, 'r') as in_file:
+        #         stripped = (line.strip().replace('"', '') for line in in_file)
+        #         templines =  [line.split(",") for line in stripped if line]
+        #         lines = []
+        #         for l in templines:
+        #             lines.append(tuple(essentials) + tuple(l))
+        #         with open(savepath, 'w', newline='') as out_file:
+        #             writer = csv.writer(out_file)
+        #             writer.writerows(lines)
+        #     self.updateOil(savepath)
 
         
 
@@ -155,25 +156,25 @@ class ProGenPipeline:
 
         return item
     
-    def updateOil(self, path, delpath):
+    def updateOil(self, path):
         with open(path, 'r') as f:
             next(f) # Skip the header row.
-            self.cur.copy_from(f, 'oilProduction', sep=',')
+            DATABASE.cur.copy_from(f, 'oilProduction', sep=',')
 
-        self.conn.commit()
+        DATABASE.conn.commit()
         # os.unlink(delpath)
 
     def store_wh(self, item):
-        self.cur.execute(
+        DATABASE.cur.execute(
             "INSERT INTO WH VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
             tuple(item))
-        self.conn.commit()
+        DATABASE.conn.commit()
 
     def store_ip(self, item):
-        self.cur.execute(
+        DATABASE.cur.execute(
             "INSERT INTO IP VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
             tuple(item))
-        self.conn.commit()
+        DATABASE.conn.commit()
 
     def store_cutting(self, item):
         newitem = []
@@ -182,17 +183,17 @@ class ProGenPipeline:
                 t.append('')
             newitem.append(t)
 
-        args_str = b','.join(self.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in newitem).decode("utf-8")
-        self.cur.execute("INSERT INTO cutting VALUES " + args_str)
-        self.conn.commit()
+        args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in newitem).decode("utf-8")
+        DATABASE.cur.execute("INSERT INTO cutting VALUES " + args_str)
+        DATABASE.conn.commit()
 
     def store_casing(self, item):
         args_str = b','.join(
-            self.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
-        self.cur.execute("INSERT INTO casing VALUES " + args_str)
-        self.conn.commit()
+            DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+        DATABASE.cur.execute("INSERT INTO casing VALUES " + args_str)
+        DATABASE.conn.commit()
 
     def store_pf(self, item):
-        args_str = b','.join(self.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
-        self.cur.execute("INSERT INTO Perforation VALUES " + args_str)
-        self.conn.commit()
+        args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+        DATABASE.cur.execute("INSERT INTO Perforation VALUES " + args_str)
+        DATABASE.conn.commit()
