@@ -34,13 +34,11 @@ class Crawler(scrapy.Spider):
 
     def get_data(self, response):
         global CURRENTKID
-        tabl = response.css("hr+ table a").xpath("@href").extract()
-        tabls = response.css("hr+ table a::text").extract()
+        toggleEngineering = response.css("hr+ table a").xpath("@href").extract()
+        toggleEngineeringText = response.css("hr+ table a::text").extract()
 
-        print(tabls)
-
-        if tabls[0] == "View Engineering Data" and tabl:
-            yield response.follow(tabl[0], callback=self.get_tables)
+        if toggleEngineeringText[0] == "View Engineering Data" and toggleEngineering:
+            yield response.follow(toggleEngineering[0], callback=self.get_tables)
         else:
             page_data = dict()
 
@@ -89,15 +87,15 @@ class Crawler(scrapy.Spider):
                 cutting = response.css('b+ ul a::text').extract()
                 
                 print(cutting, cuttinghref)
-                # count = 0
-                # for i in range(len(cutting)):
-                #     if cutting[i] in TODOWNLOAD:
-                #         count += 1
-                #         yield Request(
-                #         url=response.urljoin(cuttinghref[i]),
-                #         callback=self.save_file,
-                #         meta={'filename' : cutting[i]+str(count)+"."+cuttinghref[i].split('.')[-1]}
-                #     )
+                count = 0
+                for i in range(len(cutting)):
+                    if cutting[i] in TODOWNLOAD:
+                        count += 1
+                        yield Request(
+                        url=response.urljoin(cuttinghref[i]),
+                        callback=self.save_file,
+                        meta={'filename' : cutting[i]+str(count)+"."+cuttinghref[i].split('.')[-1]}
+                    )
 
             if "Oil Production Data" in headers:
                 oil_production = response.css('h3+ p a').xpath("@href").extract()
@@ -120,7 +118,7 @@ class Crawler(scrapy.Spider):
         if proceed:
             yield Request(
                     url=response.urljoin(oil_data_href[-1]),
-                    callback=self.save_csv,
+                    callback=self.save_oil_data,
                     meta={'filename' : "oil_production.txt", 'kid' : ckid}
                     )
             
@@ -190,7 +188,7 @@ class Crawler(scrapy.Spider):
         with open(path, 'wb') as file:
             file.write(response.body)
     
-    def save_csv(self, response):
+    def save_oil_data(self, response):
         filename = response.meta.get('filename')
         kid = response.meta.get('kid')
         cwd = os.getcwd()
