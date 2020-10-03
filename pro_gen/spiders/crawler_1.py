@@ -121,7 +121,7 @@ class Crawler(scrapy.Spider):
             yield Request(
                     url=response.urljoin(oil_data_href[-1]),
                     callback=self.save_csv,
-                    meta={'filename' : "oil_production.csv", 'kid' : ckid}
+                    meta={'filename' : "oil_production.txt", 'kid' : ckid}
                     )
             
 
@@ -197,15 +197,27 @@ class Crawler(scrapy.Spider):
         if not os.path.isdir(os.path.join(cwd, "docs", CURRENTKID)):
             os.mkdir(os.path.join(cwd, "docs", CURRENTKID))
         path = os.path.join(cwd, "docs", CURRENTKID, filename)
+        dirpath = os.path.join(cwd, "docs", CURRENTKID)
         self.logger.info('Saving PDF %s', path)
-        stripped = (line.strip().replace('"', '') for line in response.body)
-        templines =  [line.split(",") for line in stripped if line]
-        lines = []
-        for l in templines:
-            lines.append((kid) + tuple(l))
-        with open(path, 'w', newline='') as out_file:
-            writer = csv.writer(out_file)
-            writer.writerows(lines)
+        with open(path, 'wb') as file:
+            file.write(response.body)
+        with open(path, 'r') as in_file:
+            stripped = (line.strip().replace('"', '') for line in in_file)
+            templines =  [line.split(",") for line in stripped if line]
+            lines = []
+            # print(lines)
+            for l in templines:
+                lines.append(tuple([kid]) + tuple(l))
+            # print(lines)
+            with open(os.path.join(dirpath, filename.split('.')[0] + ".csv"), 'w', newline='') as out_file:
+                writer = csv.writer(out_file)
+                writer.writerows(lines)
+        
+        with open(path, 'r') as f:
+            next(f) # Skip the header row.
+            DATABASE.cur.copy_from(f, 'oilProduction', sep=',')
+
+        DATABASE.conn.commit()
         # with open(path, 'wb') as file:
         #     file.write(response.body)
 
