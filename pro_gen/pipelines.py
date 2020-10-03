@@ -126,6 +126,14 @@ class ProGenPipeline(db):
                     temp.extend(essentials)
                     temp.extend(pfRawData[i * 9 + 1:(i + 1) * 9:2])
                     pfFilteredData.append(temp)
+                
+                # Remove empty rows
+                toRemove = []
+                for row in pfFilteredData:
+                    if row.count("") >= 3:
+                        toRemove.append(row)
+                for items in toRemove:
+                    pfFilteredData.remove(pfFilteredData.index(items))
                 # self.store_pf(pfFilteredData)
 
         except:
