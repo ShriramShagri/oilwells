@@ -2,8 +2,8 @@ import psycopg2
 # Database
 HOST = 'localhost'
 USER = 'postgres'
-PASSWORD = 'lynx1729'
-DATABASE = 'oilWells'
+PASSWORD = '123456'
+DATABASE = 'oilwells'
 
 class db:
     def __init__(self):
