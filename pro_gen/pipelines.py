@@ -12,10 +12,17 @@ import os
 
 
 class ProGenPipeline(db):
-
+    '''
+    Handle Data Like Pro
+    '''
     def process_item(self, item, spider):
-
+        '''
+        Check for all the data sent and handle them with care 
+        '''
         def checklist(s1, s2, l):
+            '''
+            Just a repeated set of lines
+            '''
             try:
                 if l[l.index(s1)+1] != s2:
                     return True
@@ -23,7 +30,7 @@ class ProGenPipeline(db):
             except:
                 return False
 
-        # if wh table is present, pass proper param
+        # if wh table is present, gather relevant data and add to table
 
         whRawData = [i.replace('\n', "") for i in item['wh']]
         whFilteredData = []
@@ -48,6 +55,8 @@ class ProGenPipeline(db):
             else:
                whFilteredData.append("") 
 
+        # Add to table :)
+
         # self.store_wh(whFilteredData)
 
         essentials = [whFilteredData[0], whFilteredData[1]]
@@ -58,17 +67,20 @@ class ProGenPipeline(db):
         try:
             if item['ip']:
                 ipRawData = [i.replace('\n', "") for i in item['ip']]
-                ipFilteredData = []
+                ipFilteredData_temp = []
 
                 for clms in range(len(IPCOLUMNS)-1):
                     if checklist(IPCOLUMNS[clms], IPCOLUMNS[clms + 1], ipRawData):
-                        ipFilteredData.append(ipRawData[ipRawData.index(IPCOLUMNS[clms]) + 1])
+                        ipFilteredData_temp.append(ipRawData[ipRawData.index(IPCOLUMNS[clms]) + 1])
                     else:
-                        ipFilteredData.append("") 
+                        ipFilteredData_temp.append("") 
                 
-                tem = list(essentials)
-                tem.extend(ipFilteredData)
-                # self.store_ip(tem)
+                ipFilteredData = list(essentials)
+                ipFilteredData.extend(ipFilteredData_temp)
+
+                # Add to table :)
+
+                # self.store_ip(ipFilteredData)
         except:
             pass
 
@@ -78,12 +90,18 @@ class ProGenPipeline(db):
             if item['casing']:
                 casingRawData = item['casing'][item['casing'].index('Additives') + 3:]
                 casingFilteredData = []
+
+                # Let's hope the casing data repeats itself after 17 elements 
                 for i in range(len(casingRawData) // 17):
                     temp = list()
                     temp.extend(essentials)
                     temp.extend(casingRawData[i * 17 + 1:(i + 1) * 17:2])
                     casingFilteredData.append(temp)
+                
+                # Add to table :)
+
                 # self.store_casing(casingFilteredData)
+
         except:
             pass
 
@@ -108,6 +126,9 @@ class ProGenPipeline(db):
                         toRemove.append(row)
                 for items in toRemove:
                     pfFilteredData.remove(pfFilteredData.index(items))
+                
+                # Add to table :)
+
                 # self.store_pf(pfFilteredData)
 
         except:
@@ -117,6 +138,7 @@ class ProGenPipeline(db):
 
         try:
             if item['cutting']:
+                # I can't explain these :p
                 cuttingRawData = []
                 cuttingRawDatatemp = item['cutting'][2:]
                 cuttingRawDatatemp = [i.replace('\n', "") for i in cuttingRawDatatemp]
@@ -131,6 +153,9 @@ class ProGenPipeline(db):
                     temp.extend(essentials)
                     temp.extend(j[::2])
                     cuttingFilteredData.append(temp)
+
+                # Add to table :)
+
                 # self.store_cutting(cuttingFilteredData)
 
         except:
@@ -139,18 +164,28 @@ class ProGenPipeline(db):
         return item
 
     def store_wh(self, item):
+        '''
+        Store WH to table
+        '''
         DATABASE.cur.execute(
             "INSERT INTO WH VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
             tuple(item))
         DATABASE.conn.commit()
 
     def store_ip(self, item):
+        '''
+        Store IP to table
+        '''
         DATABASE.cur.execute(
             "INSERT INTO IP VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
             tuple(item))
         DATABASE.conn.commit()
 
     def store_cutting(self, item):
+        '''
+        Store Cuttings to table
+        '''
+        # Check if 'skips' is present
         newitem = []
         for t in item:
             while len(t) < 6:
@@ -162,12 +197,18 @@ class ProGenPipeline(db):
         DATABASE.conn.commit()
 
     def store_casing(self, item):
+        '''
+        Store casing to table
+        '''
         args_str = b','.join(
             DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
         DATABASE.cur.execute("INSERT INTO casing VALUES " + args_str)
         DATABASE.conn.commit()
 
     def store_pf(self, item):
+        '''
+        Store Perforation to table
+        '''
         args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
         DATABASE.cur.execute("INSERT INTO Perforation VALUES " + args_str)
         DATABASE.conn.commit()
