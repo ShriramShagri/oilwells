@@ -6,22 +6,12 @@
 
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
-import psycopg2
 from .constants import *
 import csv
 import os
 
 
 class ProGenPipeline(db):
-    def __init__(self):
-        pass
-        # self.conn = psycopg2.connect(
-        #     host=HOST,
-        #     database=DATABASE,
-        #     user=USER,
-        #     password=PASSWORD
-        # )
-        # self.cur = self.conn.cursor()
 
     def process_item(self, item, spider):
 
@@ -64,22 +54,6 @@ class ProGenPipeline(db):
 
 
          # if casing table is present, pass proper param
-
-        # path = os.path.join(os.getcwd(), 'docs', essentials[-1], 'oil_production.txt')
-        # if os.path.exists(path):
-        #     savepath = os.path.join(os.getcwd(), 'docs', essentials[-1], 'oil_production.csv')
-        #     with open(path, 'r') as in_file:
-        #         stripped = (line.strip().replace('"', '') for line in in_file)
-        #         templines =  [line.split(",") for line in stripped if line]
-        #         lines = []
-        #         for l in templines:
-        #             lines.append(tuple(essentials) + tuple(l))
-        #         with open(savepath, 'w', newline='') as out_file:
-        #             writer = csv.writer(out_file)
-        #             writer.writerows(lines)
-        #     self.updateOil(savepath)
-
-        
 
         try:
             if item['ip']:
@@ -163,14 +137,6 @@ class ProGenPipeline(db):
             pass
 
         return item
-    
-    def updateOil(self, path):
-        with open(path, 'r') as f:
-            next(f) # Skip the header row.
-            DATABASE.cur.copy_from(f, 'oilProduction', sep=',')
-
-        DATABASE.conn.commit()
-        # os.unlink(delpath)
 
     def store_wh(self, item):
         DATABASE.cur.execute(
