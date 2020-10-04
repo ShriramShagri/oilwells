@@ -104,7 +104,6 @@ class Crawler(scrapy.Spider):
 
         if "Oil Production Data" in headers:
             oil_production = response.css('h3+ p a').xpath("@href").extract()
-            # print(oil_production)
 
             if oil_production:
                 yield response.follow(oil_production.pop().replace('.MainLease?', '.MonthSave?'), callback=self.getOilData, meta={'kid': CURRENTKID}) # replace mainlease to skip a page
@@ -118,8 +117,8 @@ class Crawler(scrapy.Spider):
 
         if toggleEngineeringText[0] == "View Engineering Data" and toggleEngineering:
             yield response.follow(toggleEngineering[0], callback=self.get_tables)
+
         else:
-            page_data = dict()
 
             # Collect IP table and Send to Pipeline (Multiple css elector path might be present)
 
@@ -156,25 +155,39 @@ class Crawler(scrapy.Spider):
         '''
         This function is used to Data from engineering page
         '''
-        page_data = dict()
 
+        # Collect IP table and Send to Pipeline (Multiple css elector path might be present)
+
+        # FATAL: CSS SELECTOR TO BE FIXED!!!
 
         initial_potential = response.css('table:nth-child(7) td ::text').extract()
 
         if initial_potential:
             self.items['ip'] = initial_potential
 
+        # Collect casing table and Send to Pipeline (Multiple css elector path might be present)
+
+        # FATAL: CSS SELECTOR TO BE FIXED!!!
+
         casing_data = response.css("table:nth-child(9) ::text").extract()
 
         if casing_data:
             self.items['casing'] = casing_data
+        
+        # Collect perforation table and Send to Pipeline (Multiple css elector path might be present)
+
+        # FATAL: CSS SELECTOR TO BE FIXED!!!
 
         perforation_data = response.css("table:nth-child(13) ::text").extract()
 
         if perforation_data:
             self.items['pf'] = perforation_data
+        
+         # Get All H3 tags to recognise all tables in the page
 
         headers = response.css('h3::text').extract()
+
+        # check if cuttings tabale is present, if present, Send to pipeline
 
         if "Cuttings Data" in headers:
                 cutting = response.css(f'table:nth-child({(headers.index("Cuttings Data") + 1) * 2}) ::text').extract()
@@ -186,6 +199,8 @@ class Crawler(scrapy.Spider):
                     if cutting:
                         if 3 < len(cutting) < 15:
                             self.items['cutting'] = cutting
+        
+        # Check for all pdfs present and download. To manage all the pdfs that get downloaded, goto constants.py file
 
         if "ACO-1 and Driller's Logs" in headers:
             cuttinghref = response.css('b+ ul a::attr(href)').extract()
@@ -200,6 +215,8 @@ class Crawler(scrapy.Spider):
                     callback=self.save_file,
                     meta={'filename' : cutting[i]+str(count)+cuttinghref[i].split('.')[-1]}
                 )
+
+        # Check for oil Production page. If so redirect and initiate .txt file Download
             
         if "Oil Production Data" in headers:
                 oil_production = response.css('h3+ p a').xpath("@href").extract()
