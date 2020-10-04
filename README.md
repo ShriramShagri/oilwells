@@ -217,3 +217,18 @@ CREATE TABLE oilProduction (
 );
 
 ```
+
+>IP Table
+
+```sql
+CREATE TABLE Tops(
+   API TEXT,
+   KID TEXT,
+   FORMATION TEXT,
+   TOP TEXT,
+   BASE TEXT,
+   SOURCE TEXT,
+   UPDATED TEXT
+);
+
+```
