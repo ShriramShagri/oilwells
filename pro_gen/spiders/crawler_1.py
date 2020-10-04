@@ -41,7 +41,7 @@ class Crawler(scrapy.Spider):
         # Itetrate Through All links per page
 
         # for a in wellColumn:
-        yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1025721792',
+        yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1002880481',
                               callback=self.get_data)
 
     def get_data(self, response):
@@ -90,8 +90,20 @@ class Crawler(scrapy.Spider):
         # Check for all pdfs present and download. To manage all the pdfs that get downloaded, goto constants.py file
 
         if "ACO-1 and Driller's Logs" in headers:
+            tempdownloadlist = list(TODOWNLOAD)
             pdfherf = response.css('b+ ul a::attr(href)').extract()
             pdf = response.css('b+ ul a::text').extract()
+
+            drillreportherf = response.css('tr:nth-child(3) a::attr(href)').extract()
+            drillreport = response.css('tr:nth-child(3) a::text').extract()
+            if 'Digital Wellbore information for this horizontal well is available.' in drillreport:
+                tempdownloadlist.remove('Directional Drilling Report')
+                url = drillreportherf[drillreport.index('Digital Wellbore information for this horizontal well is available.')]
+                yield Request(
+                    url=response.urljoin(url),
+                    callback=self.save_file,
+                    meta={'filename' : 'Directional Drilling Report'+"."+url.split('.')[-1]}
+                )
             
             count = 0
             for i in range(len(pdf)):
