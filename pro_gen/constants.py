@@ -7,7 +7,7 @@ class db:
     '''
     def __init__(self):
         self.conn = psycopg2.connect(
-            host=' localhost',
+            host='localhost',
             database= 'oilwells',
             user= 'postgres',
             password= '123456'
