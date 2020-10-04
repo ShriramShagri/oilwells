@@ -109,7 +109,10 @@ class Crawler(scrapy.Spider):
             oil_production = response.css('h3+ p a').xpath("@href").extract()
 
             if oil_production:
-                yield response.follow(oil_production.pop().replace('.MainLease?', '.MonthSave?'), callback=self.getOilData, meta={'kid': CURRENTKID}) # replace mainlease to skip a page
+                yield response.follow(
+                    oil_production.pop().replace('.MainLease?', '.MonthSave?'), 
+                    callback=self.getOilData, 
+                    meta={'kid': CURRENTKID, 'api' : CURRENTAPI}) # replace mainlease to skip a page
 
         # Check if Engineering Data Page is present
 
@@ -305,15 +308,14 @@ class Crawler(scrapy.Spider):
         with open(path, 'wb') as file:
             file.write(response.body)
 
-        # read downloaded text file and convert to csv(add required columns too)
+        # read downloaded text file and convert to postgres ready text file
         lines = []
         with open(path, 'r') as in_file:
             stripped = [line.strip().strip('"') for line in in_file]
-            # templines =  [line.split(",") for line in stripped if line]
             
-            for l in stripped[1:-1]:
-                lines.append(CURRENTAPI + ';' + kid + ';' + l.replace('","', ';') + '\n')
-            lines.append(CURRENTAPI + ';' + kid + ';' + stripped[-1].replace('","', ';'))
+            for l in stripped[1:-1]: # Ignore header
+                lines.append(api + ';' + kid + ';' + l.replace('","', ';') + '\n')
+            lines.append(api + ';' + kid + ';' + stripped[-1].replace('","', ';'))
             
         with open(path, 'w') as out_file:
             out_file.writelines(lines)
