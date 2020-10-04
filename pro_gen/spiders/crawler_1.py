@@ -7,6 +7,7 @@ import csv
 from scrapy.http import Request
 
 CURRENTKID = ""
+CURRENTAPI = ''
 
 
 class Crawler(scrapy.Spider):
@@ -40,7 +41,7 @@ class Crawler(scrapy.Spider):
         # Itetrate Through All links per page
 
         # for a in wellColumn:
-        yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1002880481',
+        yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1025721792',
                               callback=self.get_data)
 
     def get_data(self, response):
@@ -49,7 +50,7 @@ class Crawler(scrapy.Spider):
         '''
         # Use KID of current link for file and folder names
 
-        global CURRENTKID
+        global CURRENTKID, CURRENTAPI
 
         # Collect WH table and Send to Pipeline (Multiple css elector path might be present)
 
@@ -61,10 +62,12 @@ class Crawler(scrapy.Spider):
         if len(well_data) > 50:
             self.items['wh'] = well_data
             # Set KID for current link
+            CURRENTAPI = well_data[3].replace("\n", "")
             CURRENTKID = well_data[5].replace("\n", "")
         elif len(well_data2) > 50:
             self.items['wh'] = well_data2
             # Set KID for current link
+            CURRENTAPI = well_data[3].replace("\n", "")
             CURRENTKID = well_data2[5].replace("\n", "")
         
         # Get All H3 tags to recognise all tables in the page
@@ -222,7 +225,10 @@ class Crawler(scrapy.Spider):
                 oil_production = response.css('h3+ p a').xpath("@href").extract()
 
                 if oil_production:
-                    yield response.follow(oil_production.pop().replace('.MainLease?', '.MonthSave?'), callback=self.getOilData, meta={'kid': CURRENTKID})
+                    yield response.follow(
+                        oil_production.pop().replace('.MainLease?', '.MonthSave?'), 
+                        callback=self.getOilData, 
+                        meta={'kid': CURRENTKID, 'api' : CURRENTAPI})
 
         yield self.items
     
@@ -233,6 +239,7 @@ class Crawler(scrapy.Spider):
         # get KID from metadata
 
         ckid = response.meta.get('kid')
+        capi = response.meta.get('api')
         proceed = False
 
         #  Get txt file link and download
@@ -245,7 +252,7 @@ class Crawler(scrapy.Spider):
             yield Request(
                     url=response.urljoin(oil_data_href[-1]),
                     callback=self.save_oil_data,
-                    meta={'filename' : "oil_production.txt", 'kid' : ckid}
+                    meta={'filename' : "oil_production.txt", 'kid' : ckid, 'api' : capi}
                     )
             
 
@@ -280,6 +287,7 @@ class Crawler(scrapy.Spider):
 
         filename = response.meta.get('filename')
         kid = response.meta.get('kid')
+        api = response.meta.get('api')
 
         # Setup appropriate path and create directory
 
@@ -298,25 +306,23 @@ class Crawler(scrapy.Spider):
             file.write(response.body)
 
         # read downloaded text file and convert to csv(add required columns too)
-
+        lines = []
         with open(path, 'r') as in_file:
-            stripped = (line.strip().replace('"', '') for line in in_file)
-            templines =  [line.split(",") for line in stripped if line]
-            lines = []
-            for l in templines:
-                lines.append(tuple([kid]) + tuple(l))
+            stripped = [line.strip().strip('"') for line in in_file]
+            # templines =  [line.split(",") for line in stripped if line]
             
-            # Write to csv file 
-
-            with open(os.path.join(dirpath, filename.split('.')[0] + ".csv"), 'w', newline='') as out_file:
-                writer = csv.writer(out_file)
-                writer.writerows(lines)
+            for l in stripped[1:-1]:
+                lines.append(CURRENTAPI + ';' + kid + ';' + l.replace('","', ';') + '\n')
+            lines.append(CURRENTAPI + ';' + kid + ';' + stripped[-1].replace('","', ';'))
+            
+        with open(path, 'w') as out_file:
+            out_file.writelines(lines)
         
         # Save to database
 
-        with open(os.path.join(dirpath, filename.split('.')[0] + ".csv"), 'r') as f:
-            next(f) # Skip the header row.
-            DATABASE.cur.copy_from(f, 'oilProduction', sep=',')
+        with open(path, 'r') as f:
+            # next(f) # Skip the header row.
+            DATABASE.cur.copy_from(f, 'oilProduction', sep=';')
 
         DATABASE.conn.commit()
 
