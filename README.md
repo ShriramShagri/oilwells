@@ -81,6 +81,10 @@ https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1025721792
 
 ---
 
+Directional Suyvey: https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1002880481
+
+---
+
 # Table Queries
 
 >WH Table
