@@ -41,7 +41,7 @@ class Crawler(scrapy.Spider):
         # Itetrate Through All links per page
 
         # for a in wellColumn:
-        yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1002880481',
+        yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1006067479',
                               callback=self.get_data)
 
     def get_data(self, response):
@@ -62,13 +62,13 @@ class Crawler(scrapy.Spider):
         if len(well_data) > 50:
             self.items['wh'] = well_data
             # Set KID for current link
-            CURRENTAPI = well_data[3].replace("\n", "")
-            CURRENTKID = well_data[5].replace("\n", "")
+            CURRENTAPI = well_data[well_data.index('API: ')+1].replace("\n", "")
+            CURRENTKID = well_data[well_data.index('KID: ')+1].replace("\n", "")
         elif len(well_data2) > 50:
             self.items['wh'] = well_data2
             # Set KID for current link
-            CURRENTAPI = well_data[3].replace("\n", "")
-            CURRENTKID = well_data2[5].replace("\n", "")
+            CURRENTAPI = well_data[well_data.index('API: ')+1].replace("\n", "")
+            CURRENTKID = well_data2[well_data.index('KID: ')+1].replace("\n", "")
         
         # Get All H3 tags to recognise all tables in the page
 
@@ -125,7 +125,27 @@ class Crawler(scrapy.Spider):
                     oil_production.pop().replace('.MainLease?', '.MonthSave?'), 
                     callback=self.getOilData, 
                     meta={'kid': CURRENTKID, 'api' : CURRENTAPI}) # replace mainlease to skip a page
+        
+        # check if Tops tabale is present, if present save to database
 
+        if "Tops Data" in headers:
+            tops = response.css(f'table:nth-child({(headers.index("Tops Data") + 1) * 2}) td::text').extract()
+
+            if len(tops) <= 5:
+                # Redirect to tops table page
+
+                topspage = response.css(f'table:nth-child({(headers.index("Tops Data") + 1) * 2}) a::attr(href)').extract()
+                yield response.follow(
+                    topspage[-1], 
+                    callback=self.gettopspage, 
+                    meta={'kid': CURRENTKID, 'api' : CURRENTAPI})
+            
+            else:
+                # Save tops table data
+
+                topspage = response.css(f'table:nth-child({(headers.index("Tops Data") + 1) * 2}) td::text').extract()
+                self.topsSegregation(topspage)
+                
         # Check if Engineering Data Page is present
 
         toggleEngineering = response.css("hr+ table a").xpath("@href").extract()
@@ -244,9 +264,58 @@ class Crawler(scrapy.Spider):
                         oil_production.pop().replace('.MainLease?', '.MonthSave?'), 
                         callback=self.getOilData, 
                         meta={'kid': CURRENTKID, 'api' : CURRENTAPI})
+        
+        if "Tops Data" in headers:
+            tops = response.css(f'table:nth-child({(headers.index("Tops Data") + 1) * 2}) td::text').extract()
+
+            if len(tops) <= 5:
+                # Redirect to tops table page
+
+                topspage = response.css(f'table:nth-child({(headers.index("Tops Data") + 1) * 2}) a::attr(href)').extract()
+                yield response.follow(
+                    topspage[-1], 
+                    callback=self.gettopspage, 
+                    meta={'kid': CURRENTKID, 'api' : CURRENTAPI})
+            
+            else:
+                # Save tops table data
+
+                topspage = response.css(f'table:nth-child({(headers.index("Tops Data") + 1) * 2}) td::text').extract()
+                self.topsSegregation(topspage)
 
         yield self.items
     
+    def gettopspage(self, response):
+        '''
+        This function collects tops data from redirected page
+        '''
+        # Collect the table
+        fulltable = response.css('tr+ tr td::text').extract()
+        self.topsSegregation(fulltable[len(fulltable)%6:])
+
+    def topsSegregation(self, data):
+        '''
+        This function stores Tops table data into database
+        '''
+        # Remove and segregate data
+
+        topsRawData = [i.replace('\n', "").replace('\xa0', '') for i in data]
+        topsRawData = [topsRawData[i:i + 6] for i in range(0, len(topsRawData), 6)]
+
+        topsFilteredData= []
+
+        for i in topsRawData:
+            temp = list()
+            temp.extend([CURRENTAPI,CURRENTKID])
+            temp.extend([i[0] + i[1]] + i[2:])
+            topsFilteredData.append(temp)
+        
+        # Push to database
+
+        args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in topsFilteredData).decode("utf-8")
+        DATABASE.cur.execute("INSERT INTO tops VALUES " + args_str)
+        DATABASE.conn.commit()
+
     def getOilData(self, response):
         '''
         This function is used to redirect and initiate file download for Oil Production Data
@@ -334,9 +403,9 @@ class Crawler(scrapy.Spider):
         
         # Save to database
 
-        with open(path, 'r') as f:
-            # next(f) # Skip the header row.
-            DATABASE.cur.copy_from(f, 'oilProduction', sep=';')
+        # with open(path, 'r') as f:
+        #     # next(f) # Skip the header row.
+        #     DATABASE.cur.copy_from(f, 'oilProduction', sep=';')
 
         DATABASE.conn.commit()
 
