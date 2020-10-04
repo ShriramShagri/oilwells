@@ -107,7 +107,7 @@ class Crawler(scrapy.Spider):
             
             count = 0
             for i in range(len(pdf)):
-                if pdf[i] in TODOWNLOAD:
+                if pdf[i] in tempdownloadlist:
                     count += 1
                     yield Request(
                     url=response.urljoin(pdfherf[i]),
