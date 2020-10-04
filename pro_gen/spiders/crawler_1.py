@@ -51,6 +51,64 @@ class Crawler(scrapy.Spider):
 
         global CURRENTKID
 
+        # Collect WH table and Send to Pipeline (Multiple css elector path might be present)
+
+        well_data = response.css('hr+ table tr:nth-child(1) ::text').extract()
+
+        well_data2 = response.css("table:nth-child(5) tr:nth-child(1) ::text").extract()
+
+        # Simple check for valid data
+        if len(well_data) > 50:
+            self.items['wh'] = well_data
+            # Set KID for current link
+            CURRENTKID = well_data[5].replace("\n", "")
+        elif len(well_data2) > 50:
+            self.items['wh'] = well_data2
+            # Set KID for current link
+            CURRENTKID = well_data2[5].replace("\n", "")
+        
+        # Get All H3 tags to recognise all tables in the page
+
+        headers = response.css('h3::text').extract()
+
+        # check if cuttings tabale is present, if present, Send to pipeline
+
+        if "Cuttings Data" in headers:
+            cutting = response.css(f'table:nth-child({(headers.index("Cuttings Data") + 1) * 2}) ::text').extract()
+            if cutting:
+                if 3 < len(cutting) < 15:
+                    self.items['cutting'] = cutting
+            else:
+                cutting = response.css(f'table:nth-child({headers.index("Cuttings Data") * 2}) ::text').extract() # Care to be taken if multiple css selectors are present
+                if cutting:
+                    if 3 < len(cutting) < 15:
+                        self.items['cutting'] = cutting
+
+        # Check for all pdfs present and download. To manage all the pdfs that get downloaded, goto constants.py file
+
+        if "ACO-1 and Driller's Logs" in headers:
+            pdfherf = response.css('b+ ul a::attr(href)').extract()
+            pdf = response.css('b+ ul a::text').extract()
+            
+            count = 0
+            for i in range(len(pdf)):
+                if pdf[i] in TODOWNLOAD:
+                    count += 1
+                    yield Request(
+                    url=response.urljoin(pdfherf[i]),
+                    callback=self.save_file,
+                    meta={'filename' : pdf[i]+str(count)+"."+pdfherf[i].split('.')[-1]}
+                )
+
+        # Check for oil Production page. If so redirect and initiate .txt file Download
+
+        if "Oil Production Data" in headers:
+            oil_production = response.css('h3+ p a').xpath("@href").extract()
+            # print(oil_production)
+
+            if oil_production:
+                yield response.follow(oil_production.pop().replace('.MainLease?', '.MonthSave?'), callback=self.getOilData, meta={'kid': CURRENTKID}) # replace mainlease to skip a page
+
         # Check if Engineering Data Page is present
 
         toggleEngineering = response.css("hr+ table a").xpath("@href").extract()
@@ -63,23 +121,7 @@ class Crawler(scrapy.Spider):
         else:
             page_data = dict()
 
-            # Collect WH table and Send to Pipeline (Multiple css elector path might be present)
-
-            well_data = response.css('hr+ table tr:nth-child(1) ::text').extract()
-
-            well_data2 = response.css("table:nth-child(5) tr:nth-child(1) ::text").extract()
-
-            # Simple check for valid data
-            if len(well_data) > 50:
-                self.items['wh'] = well_data
-                # Set KID for current link
-                CURRENTKID = well_data[5].replace("\n", "")
-            elif len(well_data2) > 50:
-                self.items['wh'] = well_data2
-                # Set KID for current link
-                CURRENTKID = well_data2[5].replace("\n", "")
-
-            # Collect WH table and Send to Pipeline (Multiple css elector path might be present)
+            # Collect IP table and Send to Pipeline (Multiple css elector path might be present)
 
             # FATAL: CSS SELECTOR TO BE FIXED!!!
 
@@ -107,89 +149,15 @@ class Crawler(scrapy.Spider):
             #
             # if perforation_data:
             #     self.items['pf'] = perforation_data
-
-            # Get All H3 tags to recognise all tables in the page
-
-            headers = response.css('h3::text').extract()
-
-            # check if cuttings tabale is present, if present, Send to pipeline
-
-            if "Cuttings Data" in headers:
-                cutting = response.css(f'table:nth-child({(headers.index("Cuttings Data") + 1) * 2}) ::text').extract()
-                if cutting:
-                    if 3 < len(cutting) < 15:
-                        self.items['cutting'] = cutting
-                else:
-                    cutting = response.css(f'table:nth-child({headers.index("Cuttings Data") * 2}) ::text').extract() # Care to be taken if multiple css selectors are present
-                    if cutting:
-                        if 3 < len(cutting) < 15:
-                            self.items['cutting'] = cutting
-
-            # Check for all pdfs present and download. To manage all the pdfs that get downloaded, goto constants.py file
-
-            if "ACO-1 and Driller's Logs" in headers:
-                pdfherf = response.css('b+ ul a::attr(href)').extract()
-                pdf = response.css('b+ ul a::text').extract()
-                
-                count = 0
-                for i in range(len(pdf)):
-                    if pdf[i] in TODOWNLOAD:
-                        count += 1
-                        yield Request(
-                        url=response.urljoin(pdfherf[i]),
-                        callback=self.save_file,
-                        meta={'filename' : pdf[i]+str(count)+"."+pdfherf[i].split('.')[-1]}
-                    )
-
-            # Check for oil Production page. If so redirect and initiate .txt file Download
-
-            if "Oil Production Data" in headers:
-                oil_production = response.css('h3+ p a').xpath("@href").extract()
-                # print(oil_production)
-
-                if oil_production:
-                    yield response.follow(oil_production.pop().replace('.MainLease?', '.MonthSave?'), callback=self.getOilData, meta={'kid': CURRENTKID}) # replace mainlease to skip a page
                     
             yield self.items
-
-    def getOilData(self, response):
-        '''
-        This function is used to redirect and initiate file download for Oil Production Data
-        '''
-        # get KID from metadata
-
-        ckid = response.meta.get('kid')
-        proceed = False
-
-        #  Get txt file link and download
-
-        oil_data_href = response.css('a').xpath('@href').extract()
-        for item in oil_data_href:
-            if item.split('.').pop() == 'txt':
-                proceed = item
-        if proceed:
-            yield Request(
-                    url=response.urljoin(oil_data_href[-1]),
-                    callback=self.save_oil_data,
-                    meta={'filename' : "oil_production.txt", 'kid' : ckid}
-                    )
-            
 
     def get_tables(self, response):
         '''
         This function is used to Data from engineering page
         '''
-        global CURRENTKID
         page_data = dict()
-        # Add main table
-        well_data = response.css('hr+ table tr:nth-child(1) ::text').extract()
-        well_data2 = response.css("table:nth-child(5) tr:nth-child(1) ::text").extract()
-        if len(well_data) > 50:
-            self.items['wh'] = well_data
-            CURRENTKID = well_data[5].replace("\n", "")
-        elif len(well_data2) > 50:
-            self.items['wh'] = well_data2
-            CURRENTKID = well_data[5].replace("\n", "")
+
 
         initial_potential = response.css('table:nth-child(7) td ::text').extract()
 
@@ -240,6 +208,29 @@ class Crawler(scrapy.Spider):
                     yield response.follow(oil_production.pop().replace('.MainLease?', '.MonthSave?'), callback=self.getOilData, meta={'kid': CURRENTKID})
 
         yield self.items
+    
+    def getOilData(self, response):
+        '''
+        This function is used to redirect and initiate file download for Oil Production Data
+        '''
+        # get KID from metadata
+
+        ckid = response.meta.get('kid')
+        proceed = False
+
+        #  Get txt file link and download
+
+        oil_data_href = response.css('a').xpath('@href').extract()
+        for item in oil_data_href:
+            if item.split('.').pop() == 'txt':
+                proceed = item
+        if proceed:
+            yield Request(
+                    url=response.urljoin(oil_data_href[-1]),
+                    callback=self.save_oil_data,
+                    meta={'filename' : "oil_production.txt", 'kid' : ckid}
+                    )
+            
 
     def save_file(self, response):
         '''
