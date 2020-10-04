@@ -23,7 +23,7 @@ COUNTY = (3, 7, 11)
 
 # names of pdf to be downloaded
 
-TODOWNLOAD = ['Intent To Drill Well', 'Well Completion Report']
+TODOWNLOAD = ['Intent To Drill Well', 'Well Completion Report', 'Drill Stem Test']
 
 # Columns for ip table to be stored(Change db columns if added or removed any)
 
