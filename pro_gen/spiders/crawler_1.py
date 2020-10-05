@@ -59,16 +59,16 @@ class Crawler(scrapy.Spider):
         well_data2 = response.css("table:nth-child(5) tr:nth-child(1) ::text").extract()
 
         # Simple check for valid data
-        if len(well_data) > 50:
+        if 'API: ' in well_data:
             self.items['wh'] = well_data
             # Set KID for current link
             CURRENTAPI = well_data[well_data.index('API: ')+1].replace("\n", "")
             CURRENTKID = well_data[well_data.index('KID: ')+1].replace("\n", "")
-        elif len(well_data2) > 50:
+        elif 'API: ' in well_data2:
             self.items['wh'] = well_data2
             # Set KID for current link
-            CURRENTAPI = well_data[well_data.index('API: ')+1].replace("\n", "")
-            CURRENTKID = well_data2[well_data.index('KID: ')+1].replace("\n", "")
+            CURRENTAPI = well_data2[well_data2.index('API: ')+1].replace("\n", "")
+            CURRENTKID = well_data2[well_data2.index('KID: ')+1].replace("\n", "")
         
         # Get All H3 tags to recognise all tables in the page
 
@@ -193,6 +193,25 @@ class Crawler(scrapy.Spider):
         '''
         This function is used to Data from engineering page
         '''
+        # Get All H3 tags to recognise all headings inside tables in the page
+
+        headers = response.css('td h3::text').extract()
+        
+        if "Casing record" in headers:
+            # Collect casing table and Send to Pipeline (Multiple css elector path might be present)
+
+            # FATAL: CSS SELECTOR TO BE FIXED!!!
+            casing_data = response.css("table:nth-child(9) ::text").extract()
+
+            self.items['casing'] = casing_data
+        
+        if "Perforation Record" in headers:
+            # Collect pf table and Send to Pipeline (Multiple css elector path might be present)
+
+            # FATAL: CSS SELECTOR TO BE FIXED!!!
+            perforation_data = response.css("table:nth-child(13) ::text").extract()
+
+            self.items['pf'] = perforation_data
 
         # Collect IP table and Send to Pipeline (Multiple css elector path might be present)
 
@@ -202,26 +221,8 @@ class Crawler(scrapy.Spider):
 
         if initial_potential:
             self.items['ip'] = initial_potential
-
-        # Collect casing table and Send to Pipeline (Multiple css elector path might be present)
-
-        # FATAL: CSS SELECTOR TO BE FIXED!!!
-
-        casing_data = response.css("table:nth-child(9) ::text").extract()
-
-        if casing_data:
-            self.items['casing'] = casing_data
-        
-        # Collect perforation table and Send to Pipeline (Multiple css elector path might be present)
-
-        # FATAL: CSS SELECTOR TO BE FIXED!!!
-
-        perforation_data = response.css("table:nth-child(13) ::text").extract()
-
-        if perforation_data:
-            self.items['pf'] = perforation_data
-        
-         # Get All H3 tags to recognise all tables in the page
+      
+        # Get All H3 tags to recognise all tables in the page
 
         headers = response.css('h3::text').extract()
 
@@ -403,9 +404,9 @@ class Crawler(scrapy.Spider):
         
         # Save to database
 
-        # with open(path, 'r') as f:
-        #     # next(f) # Skip the header row.
-        #     DATABASE.cur.copy_from(f, 'oilProduction', sep=';')
+        with open(path, 'r') as f:
+            # next(f) # Skip the header row.
+            DATABASE.cur.copy_from(f, 'oilProduction', sep=';')
 
         DATABASE.conn.commit()
 

@@ -57,7 +57,7 @@ class ProGenPipeline(db):
 
         # Add to table :)
 
-        # self.store_wh(whFilteredData)
+        self.store_wh(whFilteredData)
 
         essentials = [whFilteredData[0], whFilteredData[1]]
 
@@ -80,7 +80,7 @@ class ProGenPipeline(db):
 
                 # Add to table :)
 
-                # self.store_ip(ipFilteredData)
+                self.store_ip(ipFilteredData)
         except:
             pass
 
@@ -100,7 +100,7 @@ class ProGenPipeline(db):
                 
                 # Add to table :)
 
-                # self.store_casing(casingFilteredData)
+                self.store_casing(casingFilteredData)
 
         except:
             pass
@@ -129,7 +129,7 @@ class ProGenPipeline(db):
                 
                 # Add to table :)
 
-                # self.store_pf(pfFilteredData)
+                self.store_pf(pfFilteredData)
 
         except:
             pass
@@ -156,7 +156,7 @@ class ProGenPipeline(db):
 
                 # Add to table :)
 
-                # self.store_cutting(cuttingFilteredData)
+                self.store_cutting(cuttingFilteredData)
 
         except:
             pass
