@@ -1,10 +1,10 @@
 import scrapy
-from scrapy.http import FormRequest
+from scrapy.http import FormRequest, Request
 from ..items import ProGenItem
 from ..constants import *
 import os
 import csv
-from scrapy.http import Request
+from dateutil.parser import parse
 
 CURRENTKID = ""
 CURRENTAPI = ''
@@ -28,7 +28,7 @@ class Crawler(scrapy.Spider):
             'ew': 'W',
             'f_st': '15',
             'f_c': '25',
-            'f_pg': '2'
+            'f_pg': '15'
         }, callback=self.start_scraping)
 
     def start_scraping(self, response):
@@ -298,18 +298,30 @@ class Crawler(scrapy.Spider):
         '''
         This function stores Tops table data into database
         '''
+        def checkDate(i):
+            try:
+                try:
+                    k = int(i)
+                    return False
+                except :
+                    pass
+                parse(i)
+                return True
+            except ValueError:
+                return False
         # Remove and segregate data
 
         topsRawData = [i.replace('\n', "").replace('\xa0', '') for i in data]
-        topsRawData = [topsRawData[i:i + 6] for i in range(0, len(topsRawData), 6)]
-
+        temp = list()
         topsFilteredData= []
+        for item in topsRawData:
+            temp.append(item)
+            if checkDate(item) or len(temp) == 6:
+                if len(temp)<6:
+                    temp.insert(2, '')
+                topsFilteredData.append([CURRENTAPI,CURRENTKID] + [temp[0] + temp[1]] + temp[2:])
+                temp = []
 
-        for i in topsRawData:
-            temp = list()
-            temp.extend([CURRENTAPI,CURRENTKID])
-            temp.extend([i[0] + i[1]] + i[2:])
-            topsFilteredData.append(temp)
         
         # Push to database
         try:
