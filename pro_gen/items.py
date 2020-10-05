@@ -13,3 +13,6 @@ class ProGenItem(scrapy.Item):
     casing = scrapy.Field()
     pf = scrapy.Field()
     cutting = scrapy.Field()
+
+    def __str__(self):
+        return ""
