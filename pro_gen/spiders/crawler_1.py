@@ -27,8 +27,8 @@ class Crawler(scrapy.Spider):
         return FormRequest.from_response(response, formdata={
             'ew': 'W',
             'f_st': '15',
-            'f_c': '205',
-            'f_pg': '3'
+            'f_c': '25',
+            'f_pg': '2'
         }, callback=self.start_scraping)
 
     def start_scraping(self, response):
@@ -40,8 +40,8 @@ class Crawler(scrapy.Spider):
 
         # Itetrate Through All links per page
 
-        # for a in wellColumn:
-        yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1006067479',
+        for a in wellColumn:
+            yield response.follow(a,
                               callback=self.get_data)
 
     def get_data(self, response):
@@ -292,7 +292,7 @@ class Crawler(scrapy.Spider):
         '''
         # Collect the table
         fulltable = response.css('tr+ tr td::text').extract()
-        self.topsSegregation(fulltable[len(fulltable)%6:])
+        self.topsSegregation(fulltable[2:])
 
     def topsSegregation(self, data):
         '''
@@ -312,10 +312,13 @@ class Crawler(scrapy.Spider):
             topsFilteredData.append(temp)
         
         # Push to database
-
-        args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in topsFilteredData).decode("utf-8")
-        DATABASE.cur.execute("INSERT INTO tops VALUES " + args_str)
-        DATABASE.conn.commit()
+        try:
+            args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in topsFilteredData).decode("utf-8")
+            DATABASE.cur.execute("INSERT INTO tops VALUES " + args_str)
+        except:
+            DATABASE.conn.rollback()
+        else:
+            DATABASE.conn.commit()
 
     def getOilData(self, response):
         '''
@@ -404,9 +407,11 @@ class Crawler(scrapy.Spider):
         
         # Save to database
 
-        with open(path, 'r') as f:
-            # next(f) # Skip the header row.
-            DATABASE.cur.copy_from(f, 'oilProduction', sep=';')
-
-        DATABASE.conn.commit()
-
+        try:
+            with open(path, 'r') as f:
+                # next(f) # Skip the header row.
+                DATABASE.cur.copy_from(f, 'oilProduction', sep=';')
+        except:
+            DATABASE.conn.rollback()
+        else:
+            DATABASE.conn.commit()

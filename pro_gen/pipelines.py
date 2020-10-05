@@ -167,19 +167,27 @@ class ProGenPipeline(db):
         '''
         Store WH to table
         '''
-        DATABASE.cur.execute(
-            "INSERT INTO WH VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-            tuple(item))
-        DATABASE.conn.commit()
+        try:
+            DATABASE.cur.execute(
+                "INSERT INTO WH VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                tuple(item))
+        except:
+            DATABASE.conn.rollback()
+        else:
+            DATABASE.conn.commit()
 
     def store_ip(self, item):
         '''
         Store IP to table
         '''
-        DATABASE.cur.execute(
-            "INSERT INTO IP VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-            tuple(item))
-        DATABASE.conn.commit()
+        try:
+            DATABASE.cur.execute(
+                "INSERT INTO IP VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                tuple(item))
+        except:
+            DATABASE.conn.rollback()
+        else:
+            DATABASE.conn.commit()
 
     def store_cutting(self, item):
         '''
@@ -192,23 +200,35 @@ class ProGenPipeline(db):
                 t.append('')
             newitem.append(t)
 
-        args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in newitem).decode("utf-8")
-        DATABASE.cur.execute("INSERT INTO cutting VALUES " + args_str)
-        DATABASE.conn.commit()
+        try:
+            args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in newitem).decode("utf-8")
+            DATABASE.cur.execute("INSERT INTO cutting VALUES " + args_str)
+        except:
+            DATABASE.conn.rollback()
+        else:
+            DATABASE.conn.commit()
 
     def store_casing(self, item):
         '''
         Store casing to table
         '''
-        args_str = b','.join(
-            DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
-        DATABASE.cur.execute("INSERT INTO casing VALUES " + args_str)
-        DATABASE.conn.commit()
+        try:
+            args_str = b','.join(
+                DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+            DATABASE.cur.execute("INSERT INTO casing VALUES " + args_str)
+        except:
+            DATABASE.conn.rollback()
+        else:
+            DATABASE.conn.commit()
 
     def store_pf(self, item):
         '''
         Store Perforation to table
         '''
-        args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
-        DATABASE.cur.execute("INSERT INTO Perforation VALUES " + args_str)
-        DATABASE.conn.commit()
+        try:
+            args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+            DATABASE.cur.execute("INSERT INTO Perforation VALUES " + args_str)
+        except:
+            DATABASE.conn.rollback()
+        else:
+            DATABASE.conn.commit()
