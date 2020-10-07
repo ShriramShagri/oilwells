@@ -27,8 +27,8 @@ class Crawler(scrapy.Spider):
         return FormRequest.from_response(response, formdata={
             'ew': 'W',
             'f_st': '15',
-            'f_c': '25',
-            'f_pg': '15'
+            'f_c': '3',
+            'f_pg': '14'
         }, callback=self.start_scraping)
 
     def start_scraping(self, response):
@@ -155,39 +155,8 @@ class Crawler(scrapy.Spider):
 
         if toggleEngineeringText[0] == "View Engineering Data" and toggleEngineering:
             yield response.follow(toggleEngineering[0], callback=self.get_tables)
-
-        else:
-
-            # Collect IP table and Send to Pipeline (Multiple css elector path might be present)
-
-            # FATAL: CSS SELECTOR TO BE FIXED!!!
-
-            initial_potential = response.css('table:nth-child(7) td ::text').extract()
-
-            if initial_potential:
-                self.items['ip'] = initial_potential
-
-            # Collect Casing table and Send to Pipeline (Multiple css elector path might be present)
-            
-            # FATAL: CSS SELECTOR TO BE FIXED!!!
-
-
-            # casing_data = response.css("table:nth-child(9) th , table:nth-child(9) tr+ tr td::text").extract()
-
-            # if casing_data:
-            #     self.items['casing'] = casing_data
-
-            # Collect Pf table and Send to Pipeline (Multiple css elector path might be present)
-            
-            # FATAL: CSS SELECTOR TO BE FIXED!!!
-
-            #
-            # perforation_data = response.css("table:nth-child(13)::text").extract()
-            #
-            # if perforation_data:
-            #     self.items['pf'] = perforation_data
                     
-            yield self.items
+        yield self.items
 
     def get_tables(self, response):
         '''
@@ -317,7 +286,10 @@ class Crawler(scrapy.Spider):
         for item in topsRawData:
             temp.append(item)
             if checkDate(item) or len(temp) == 6:
-                if len(temp)<6:
+                if len(temp)==5:
+                    temp.insert(2, '')
+                elif len(temp == 4):
+                    temp.insert(1, '')
                     temp.insert(2, '')
                 topsFilteredData.append([CURRENTAPI,CURRENTKID] + [temp[0] + temp[1]] + temp[2:])
                 temp = []
@@ -424,6 +396,7 @@ class Crawler(scrapy.Spider):
                 # next(f) # Skip the header row.
                 DATABASE.cur.copy_from(f, 'oilProduction', sep=';')
         except:
+            self.logger.info('Saving txt %s', path)
             DATABASE.conn.rollback()
         else:
             DATABASE.conn.commit()
