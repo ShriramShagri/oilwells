@@ -31,35 +31,37 @@ class ProGenPipeline(db):
                 return False
 
         # if wh table is present, gather relevant data and add to table
-
-        whRawData = [i.replace('\n', "") for i in item['wh']]
-        whFilteredData = []
-        for clms in range(len(WHCOLUMS)-1):
-            if(WHCOLUMS[clms] == 'Location1'):
-                if checklist('Location: ', 'NAD27 Longitude: ', whRawData):
-                    whFilteredData.append(whRawData[whRawData.index('Location: ') + 1])
+        try:
+            whRawData = [i.replace('\n', "") for i in item['wh']]
+            whFilteredData = []
+            for clms in range(len(WHCOLUMS)-1):
+                if(WHCOLUMS[clms] == 'Location1'):
+                    if checklist('Location: ', 'NAD27 Longitude: ', whRawData):
+                        whFilteredData.append(whRawData[whRawData.index('Location: ') + 1])
+                    else:
+                        whFilteredData.append("") 
+                elif(WHCOLUMS[clms] == 'Location2'):
+                    if checklist('Location: ', 'NAD27 Longitude: ', whRawData):
+                        whFilteredData.append(whRawData[whRawData.index('Location: ') + 2])
+                    else:
+                        whFilteredData.append("") 
+                elif(WHCOLUMS[clms] == 'Location3'):
+                    if checklist('Location: ', 'NAD27 Longitude: ', whRawData):
+                        whFilteredData.append(whRawData[whRawData.index('Location: ') + 3])
+                    else:
+                        whFilteredData.append("") 
+                elif checklist(WHCOLUMS[clms], WHCOLUMS[clms + 1], whRawData):
+                    whFilteredData.append(whRawData[whRawData.index(WHCOLUMS[clms]) + 1])
                 else:
                     whFilteredData.append("") 
-            elif(WHCOLUMS[clms] == 'Location2'):
-                if checklist('Location: ', 'NAD27 Longitude: ', whRawData):
-                    whFilteredData.append(whRawData[whRawData.index('Location: ') + 2])
-                else:
-                    whFilteredData.append("") 
-            elif(WHCOLUMS[clms] == 'Location3'):
-                if checklist('Location: ', 'NAD27 Longitude: ', whRawData):
-                    whFilteredData.append(whRawData[whRawData.index('Location: ') + 3])
-                else:
-                    whFilteredData.append("") 
-            elif checklist(WHCOLUMS[clms], WHCOLUMS[clms + 1], whRawData):
-                whFilteredData.append(whRawData[whRawData.index(WHCOLUMS[clms]) + 1])
-            else:
-               whFilteredData.append("") 
 
-        # Add to table :)
+            # Add to table :)
 
-        self.store_wh(whFilteredData)
-
-        essentials = [whFilteredData[0], whFilteredData[1]]
+            self.store_wh(whFilteredData)
+            essentials = [whFilteredData[0], whFilteredData[1]]
+        except :
+            essentials = [item['api'], item['kid']]
+        
 
 
          # if casing table is present, pass proper param
@@ -173,6 +175,12 @@ class ProGenPipeline(db):
                 tuple(item))
         except:
             DATABASE.conn.rollback()
+            try:
+                DATABASE.cur.execute(
+                    "INSERT INTO WH VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    tuple(item))
+            except:
+                DATABASE.conn.rollback()
         else:
             DATABASE.conn.commit()
 
@@ -186,6 +194,12 @@ class ProGenPipeline(db):
                 tuple(item))
         except:
             DATABASE.conn.rollback()
+            try:
+                DATABASE.cur.execute(
+                    "INSERT INTO IP VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    tuple(item))
+            except:
+                DATABASE.conn.rollback()
         else:
             DATABASE.conn.commit()
 
@@ -205,6 +219,11 @@ class ProGenPipeline(db):
             DATABASE.cur.execute("INSERT INTO cutting VALUES " + args_str)
         except:
             DATABASE.conn.rollback()
+            try:
+                args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in newitem).decode("utf-8")
+                DATABASE.cur.execute("INSERT INTO cutting VALUES " + args_str)
+            except:
+                DATABASE.conn.rollback()
         else:
             DATABASE.conn.commit()
 
@@ -218,6 +237,12 @@ class ProGenPipeline(db):
             DATABASE.cur.execute("INSERT INTO casing VALUES " + args_str)
         except:
             DATABASE.conn.rollback()
+            try:
+                args_str = b','.join(
+                    DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+                DATABASE.cur.execute("INSERT INTO casing VALUES " + args_str)
+            except:
+                DATABASE.conn.rollback()
         else:
             DATABASE.conn.commit()
 
@@ -230,5 +255,10 @@ class ProGenPipeline(db):
             DATABASE.cur.execute("INSERT INTO Perforation VALUES " + args_str)
         except:
             DATABASE.conn.rollback()
+            try:
+                args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+                DATABASE.cur.execute("INSERT INTO Perforation VALUES " + args_str)
+            except:
+                DATABASE.conn.rollback()
         else:
             DATABASE.conn.commit()
