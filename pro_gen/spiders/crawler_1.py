@@ -113,7 +113,7 @@ class Crawler(scrapy.Spider):
                 yield Request(
                     url=response.urljoin(url),
                     callback=self.save_file,
-                    meta={'filename': 'Directional Drilling Report' + "." + url.split('.')[-1]}
+                    meta={'filename': 'Directional Drilling Report' + "." + url.split('.')[-1],  'kid': CURRENTKID, 'api': CURRENTAPI}
                 )
 
             count = 0
@@ -123,7 +123,7 @@ class Crawler(scrapy.Spider):
                     yield Request(
                         url=response.urljoin(pdfherf[i]),
                         callback=self.save_file,
-                        meta={'filename': pdf[i] + str(count) + "." + pdfherf[i].split('.')[-1]}
+                        meta={'filename': pdf[i] + str(count) + "." + pdfherf[i].split('.')[-1],  'kid': CURRENTKID, 'api': CURRENTAPI}
                     )
 
         # Check for oil Production page. If so redirect and initiate .txt file Download
@@ -239,7 +239,7 @@ class Crawler(scrapy.Spider):
                     yield Request(
                         url=response.urljoin(cuttinghref[i]),
                         callback=self.save_file,
-                        meta={'filename': cutting[i] + str(count) + cuttinghref[i].split('.')[-1]}
+                        meta={'filename': cutting[i] + str(count) + cuttinghref[i].split('.')[-1], 'kid': CURRENTKID, 'api': CURRENTAPI}
                     )
 
         # Check for oil Production page. If so redirect and initiate .txt file Download
@@ -364,18 +364,19 @@ class Crawler(scrapy.Spider):
         # Get filename from metadata
 
         filename = response.meta.get('filename')
+        kid = response.meta.get('kid')
+        api = response.meta.get('api')
 
         # Setup appropriate path and create directory
-        if len(CURRENTAPI) > 4:
-            api = CURRENTAPI
+        if len(api) > 4:
+            pass
         else:
             api = 'NOAPI'
 
-        cwd = os.getcwd()
-        if not os.path.isdir(os.path.join(cwd, "docs", CURRENTKID+'_'+api)):
-            os.mkdir(os.path.join(cwd, "docs", CURRENTKID+'_'+api))
+        if not os.path.isdir(os.path.join(STORAGE_PATH, "docs", kid+'_'+api)):
+            os.mkdir(os.path.join(STORAGE_PATH, "docs", kid+'_'+api))
 
-        path = os.path.join(cwd, "docs", CURRENTKID+'_'+api, filename)
+        path = os.path.join(STORAGE_PATH, "docs", kid+'_'+api, filename)
 
         # Save the file
 
@@ -401,12 +402,11 @@ class Crawler(scrapy.Spider):
 
         # Setup appropriate path and create directory
 
-        cwd = os.getcwd()
-        if not os.path.isdir(os.path.join(cwd, "docs", kid+'_'+api)):
-            os.mkdir(os.path.join(cwd, "docs", kid+'_'+api))
+        if not os.path.isdir(os.path.join(STORAGE_PATH, "docs", kid+'_'+api)):
+            os.mkdir(os.path.join(STORAGE_PATH, "docs", kid+'_'+api))
 
-        path = os.path.join(cwd, "docs", kid+'_'+api, filename)
-        dirpath = os.path.join(cwd, "docs", kid+'_'+api)
+        path = os.path.join(STORAGE_PATH, "docs", kid+'_'+api, filename)
+        dirpath = os.path.join(STORAGE_PATH, "docs", kid+'_'+api)
 
         self.logger.info('Saving txt %s', path)
 

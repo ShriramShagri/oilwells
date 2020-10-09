@@ -1,4 +1,5 @@
 import psycopg2
+import os
 
 # Database Class
 class DB:
@@ -17,6 +18,8 @@ class DB:
 # db object
 
 DATABASE = DB()
+
+STORAGE_PATH = os.getcwd()
 
 # Add all county values to this tuple to be scraped
 COUNTY = 3
