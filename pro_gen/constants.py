@@ -8,7 +8,7 @@ class db:
     def __init__(self):
         self.conn = psycopg2.connect(
             host='localhost',
-            database= 'oilwells',
+            database= 'oilWells',
             user= 'postgres',
             password= '123456'
         )
@@ -19,7 +19,7 @@ class db:
 DATABASE = db()
 
 # Add all county values to this tuple to be scraped
-COUNTY = (3, 7, 11)
+COUNTY = 3
 
 # names of pdf to be downloaded
 
