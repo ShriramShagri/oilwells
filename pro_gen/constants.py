@@ -1,14 +1,14 @@
 import psycopg2
 
 # Database Class
-class db:
+class DB:
     '''
     Connect to database here in constants.py so that db can be accessed inside spider too
     '''
     def __init__(self):
         self.conn = psycopg2.connect(
             host='localhost',
-            database= 'oilWells',
+            database= 'oilwells',
             user= 'postgres',
             password= '123456'
         )
@@ -16,7 +16,7 @@ class db:
 
 # db object
 
-DATABASE = db()
+DATABASE = DB()
 
 # Add all county values to this tuple to be scraped
 COUNTY = 3
