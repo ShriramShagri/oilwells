@@ -23,13 +23,14 @@ class Crawler(scrapy.Spider):
         '''
         Overrided function " Let's Start Scraping!!"
         '''
-        self.items = ProGenItem()
+        global page
 
         #  Fill the main form Below
+        page = 1
         return FormRequest.from_response(response, formdata={
             'ew': 'W',
             'f_st': '15',
-            'f_c': '205',
+            'f_c': str(COUNTY),
             'f_pg': str(page)
         }, callback=self.start_scraping)
 
@@ -41,14 +42,14 @@ class Crawler(scrapy.Spider):
         wellColumn = response.css("tr~ tr+ tr a:nth-child(1)").xpath("@href").extract()
 
         # Itetrate Through All links per page
-
-        for a in wellColumn:
-            yield response.follow(a,
-                                  callback=self.get_data)
-        if page == 1:
+        if len(wellColumn) > 3:
+            for a in wellColumn:
+                yield response.follow(a,
+                            callback=self.get_data)
+            
             page += 1
             yield response.follow(
-                "https://chasm.kgs.ku.edu/ords/qualified.ogw5.SelectWells?f_t=&f_r=&ew=W&f_s=&f_l=&f_op=&f_st=15&f_c=1&f_ws=ALL&f_api=&sort_by=&f_pg=2",
+                f"https://chasm.kgs.ku.edu/ords/qualified.ogw5.SelectWells?f_t=&f_r=&ew=W&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY}&f_ws=ALL&f_api=&sort_by=&f_pg={page}",
                 callback=self.start_scraping)
 
     def get_data(self, response):
@@ -56,6 +57,7 @@ class Crawler(scrapy.Spider):
         '''
         This function is used to Data from general page
         '''
+        self.items = ProGenItem()
         # Use KID of current link for file and folder names
 
         global CURRENTKID, CURRENTAPI
@@ -130,7 +132,7 @@ class Crawler(scrapy.Spider):
             oil_production = response.css('h3+ p a').xpath("@href").extract()
 
             if oil_production:
-                response.follow(
+                yield response.follow(
                     oil_production.pop().replace('.MainLease?', '.MonthSave?'),
                     callback=self.getOilData,
                     meta={'kid': CURRENTKID, 'api': CURRENTAPI})  # replace mainlease to skip a page
@@ -140,7 +142,7 @@ class Crawler(scrapy.Spider):
         if "Tops Data" in headers:
             tops = response.css(f'table:nth-child({(headers.index("Tops Data") + 1) * 2}) td::text').extract()
 
-            if len(tops) <= 5:
+            if len(tops) <= 5 and tops:
                 # Redirect to tops table page
 
                 topspage = response.css(
@@ -162,17 +164,22 @@ class Crawler(scrapy.Spider):
         toggleEngineeringText = response.css("hr+ table a::text").extract()
 
         # Change function if Engineering Data Page is found
-
+        yield self.items
+        
         if toggleEngineeringText[0] == "View Engineering Data" and toggleEngineering:
-            yield response.follow(toggleEngineering[0], callback=self.get_tables)
-
-        else:
-            yield self.items
+            yield response.follow(toggleEngineering[0], callback=self.get_tables, meta={'api': CURRENTAPI, 'kid': CURRENTKID})
+            
+            
 
     def get_tables(self, response):
         '''
         This function is used to Data from engineering page
         '''
+        self.items = ProGenItem()
+        global CURRENTKID, CURRENTAPI
+        CURRENTKID, kid = response.meta.get('kid'), response.meta.get('kid')
+        CURRENTAPI, api = response.meta.get('api'), response.meta.get('api')
+        self.items['api'], self.items['kid'] = api, kid
         # Get All H3 tags to recognise all headings inside tables in the page
 
         headers = response.css('td h3::text').extract()
@@ -241,7 +248,7 @@ class Crawler(scrapy.Spider):
             oil_production = response.css('h3+ p a').xpath("@href").extract()
 
             if oil_production:
-                response.follow(
+                yield response.follow(
                     oil_production.pop().replace('.MainLease?', '.MonthSave?'),
                     callback=self.getOilData,
                     meta={'kid': CURRENTKID, 'api': CURRENTAPI})
@@ -317,6 +324,13 @@ class Crawler(scrapy.Spider):
             DATABASE.cur.execute("INSERT INTO tops VALUES " + args_str)
         except:
             DATABASE.conn.rollback()
+            try:
+                args_str = b','.join(
+                    DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in topsFilteredData).decode(
+                    "utf-8")
+                DATABASE.cur.execute("INSERT INTO tops VALUES " + args_str)
+            except:
+                DATABASE.conn.rollback()
         else:
             DATABASE.conn.commit()
 
@@ -352,12 +366,16 @@ class Crawler(scrapy.Spider):
         filename = response.meta.get('filename')
 
         # Setup appropriate path and create directory
+        if len(CURRENTAPI) > 4:
+            api = CURRENTAPI
+        else:
+            api = 'NOAPI'
 
         cwd = os.getcwd()
-        if not os.path.isdir(os.path.join(cwd, "docs", CURRENTKID)):
-            os.mkdir(os.path.join(cwd, "docs", CURRENTKID))
+        if not os.path.isdir(os.path.join(cwd, "docs", CURRENTKID+'_'+api)):
+            os.mkdir(os.path.join(cwd, "docs", CURRENTKID+'_'+api))
 
-        path = os.path.join(cwd, "docs", CURRENTKID, filename)
+        path = os.path.join(cwd, "docs", CURRENTKID+'_'+api, filename)
 
         # Save the file
 
@@ -376,14 +394,19 @@ class Crawler(scrapy.Spider):
         kid = response.meta.get('kid')
         api = response.meta.get('api')
 
+        if len(api) > 4:
+            pass
+        else:
+            api = 'NOAPI'
+
         # Setup appropriate path and create directory
 
         cwd = os.getcwd()
-        if not os.path.isdir(os.path.join(cwd, "docs", kid)):
-            os.mkdir(os.path.join(cwd, "docs", kid))
+        if not os.path.isdir(os.path.join(cwd, "docs", kid+'_'+api)):
+            os.mkdir(os.path.join(cwd, "docs", kid+'_'+api))
 
-        path = os.path.join(cwd, "docs", kid, filename)
-        dirpath = os.path.join(cwd, "docs", kid)
+        path = os.path.join(cwd, "docs", kid+'_'+api, filename)
+        dirpath = os.path.join(cwd, "docs", kid+'_'+api)
 
         self.logger.info('Saving txt %s', path)
 
@@ -411,7 +434,12 @@ class Crawler(scrapy.Spider):
                 # next(f) # Skip the header row.
                 DATABASE.cur.copy_from(f, 'oilProduction', sep=';')
         except:
-            self.logger.info('Saving txt %s', path)
             DATABASE.conn.rollback()
+            try:
+                with open(path, 'r') as f:
+                    # next(f) # Skip the header row.
+                    DATABASE.cur.copy_from(f, 'oilProduction', sep=';')
+            except:
+                DATABASE.conn.rollback()
         else:
             DATABASE.conn.commit()
