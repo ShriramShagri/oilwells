@@ -1,3 +1,29 @@
+# Web Scraper
+
+> Install scrapy and postgres
+
+```bash
+    pip install scrapy
+    pip install psycopg2
+    pip install dateutil
+```
+
+> Go inside pro_gen folder
+
+```bash
+    cd pro_gen
+```
+
+> Run scrapy
+
+```bash
+    scrapy crawl spider_name
+```
+
+- spider_name can be changed of found inside [constants.py](pro_gen/constants.py) folder.
+- Storage path for downloaded files and counties can be changed inside the same file.
+
+
 ### Master List of Oil and Gas Wells: 
 http://www.kgs.ku.edu/Magellan/Qualified/index.html
 
