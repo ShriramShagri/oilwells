@@ -119,3 +119,10 @@ CREATE TABLE Tops(
    SOURCE TEXT,
    UPDATED TEXT
 );
+
+DROP TABLE IF EXISTS errors;
+CREATE TABLE errors(
+	api TEXT,
+	kid TEXT,
+	errortable TEXT
+);
