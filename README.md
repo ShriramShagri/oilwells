@@ -20,6 +20,8 @@
     scrapy crawl spider_name
 ```
 
+- Create database and specify the credentials in constants.py](pro_gen/constants.py) file. Also create tables, queries are in [tables.sql](pro_gen/tables.sql) file.
+
 - spider_name can be changed of found inside [constants.py](pro_gen/constants.py) folder.
 - Storage path for downloaded files and counties can be changed inside the same file.
 

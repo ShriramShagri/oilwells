@@ -2,6 +2,7 @@ import psycopg2
 import os
 
 # Database Class
+# Change the table values as you like
 class DB:
     '''
     Connect to database here in constants.py so that db can be accessed inside spider too
@@ -19,6 +20,7 @@ class DB:
 
 DATABASE = DB()
 
+# Set file storage path
 STORAGE_PATH = os.getcwd()
 
 # Add all county values to this tuple to be scraped
