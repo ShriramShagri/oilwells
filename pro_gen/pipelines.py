@@ -11,7 +11,7 @@ import csv
 import os
 
 
-class ProGenPipeline(db):
+class ProGenPipeline():
     '''
     Handle Data Like Pro
     '''
@@ -91,14 +91,19 @@ class ProGenPipeline(db):
         try:
             if item['casing']:
                 casingRawData = item['casing'][item['casing'].index('Additives') + 3:]
+                casingRawData = [i.replace('\n', "") for i in casingRawData]
                 casingFilteredData = []
 
                 # Let's hope the casing data repeats itself after 17 elements 
+                offset = 0
                 for i in range(len(casingRawData) // 17):
                     temp = list()
                     temp.extend(essentials)
-                    temp.extend(casingRawData[i * 17 + 1:(i + 1) * 17:2])
-                    casingFilteredData.append(temp)
+                    if casingRawData[i * 17 + 1 + offset] == '':
+                        offset += 1
+                    if (i + 1) * 17 + offset <= len(casingRawData):
+                        temp.extend(casingRawData[i * 17 + 1 + offset:(i + 1) * 17 + offset:2])
+                        casingFilteredData.append(temp)
                 
                 # Add to table :)
 
@@ -114,12 +119,25 @@ class ProGenPipeline(db):
                 pfRawData = item['pf'][item['pf'].index('Depth') + 3:]
                 pfRawData = [i.replace('\n', "") for i in pfRawData]
                 pfFilteredData = []
-
-                for i in range(len(pfRawData) // 9):
-                    temp = list()
-                    temp.extend(essentials)
-                    temp.extend(pfRawData[i * 9 + 1:(i + 1) * 9:2])
-                    pfFilteredData.append(temp)
+                if pfRawData % 9 == 0:
+                    for i in range(len(pfRawData) // 9):
+                        temp = list()
+                        temp.extend(essentials)
+                        temp.extend(pfRawData[i * 9 + 1:(i + 1) * 9:2])
+                        pfFilteredData.append(temp)
+                elif pfRawData % 8 == 0:
+                    for i in range(len(pfRawData) // 8):
+                        temp = list()
+                        temp.extend(essentials)
+                        temp.extend(pfRawData[i * 8 + 1:(i + 1) * 8:2])
+                        pfFilteredData.append(temp)
+                elif pfRawData % 7 == 1:
+                    pfRawData.pop(len(pfRawData//2))
+                    for i in range(len(pfRawData) // 7):
+                        temp = list()
+                        temp.extend(essentials)
+                        temp.extend(pfRawData[i * 7 + 1:(i + 1) * 7:2])
+                        pfFilteredData.append(temp)
                 
                 # Remove empty rows
                 toRemove = []
@@ -169,39 +187,49 @@ class ProGenPipeline(db):
         '''
         Store WH to table
         '''
-        try:
-            DATABASE.cur.execute(
-                "INSERT INTO WH VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                tuple(item))
-        except:
-            DATABASE.conn.rollback()
+        if item:
             try:
                 DATABASE.cur.execute(
                     "INSERT INTO WH VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                     tuple(item))
             except:
                 DATABASE.conn.rollback()
-        else:
-            DATABASE.conn.commit()
+                try:
+                    DATABASE.cur.execute(
+                        "INSERT INTO WH VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                        tuple(item))
+                except:
+                    DATABASE.conn.rollback()
+                    api, kid = item[0], item[1]
+                    sql = "INSERT INTO errors VALUES (%s, %s, %s)"
+                    DATABASE.cur.execute(sql, (api, kid, "WH"))
+                    DATABASE.conn.commit()
+            else:
+                DATABASE.conn.commit()
 
     def store_ip(self, item):
         '''
         Store IP to table
         '''
-        try:
-            DATABASE.cur.execute(
-                "INSERT INTO IP VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                tuple(item))
-        except:
-            DATABASE.conn.rollback()
+        if item:
             try:
                 DATABASE.cur.execute(
                     "INSERT INTO IP VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                     tuple(item))
             except:
                 DATABASE.conn.rollback()
-        else:
-            DATABASE.conn.commit()
+                try:
+                    DATABASE.cur.execute(
+                        "INSERT INTO IP VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                        tuple(item))
+                except:
+                    DATABASE.conn.rollback()
+                    api, kid = item[0], item[1]
+                    sql = "INSERT INTO errors VALUES (%s, %s, %s)"
+                    DATABASE.cur.execute(sql, (api, kid, "IP"))
+                    DATABASE.conn.commit()
+            else:
+                DATABASE.conn.commit()
 
     def store_cutting(self, item):
         '''
@@ -214,51 +242,66 @@ class ProGenPipeline(db):
                 t.append('')
             newitem.append(t)
 
-        try:
-            args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in newitem).decode("utf-8")
-            DATABASE.cur.execute("INSERT INTO cutting VALUES " + args_str)
-        except:
-            DATABASE.conn.rollback()
+        if item:
             try:
                 args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in newitem).decode("utf-8")
                 DATABASE.cur.execute("INSERT INTO cutting VALUES " + args_str)
             except:
                 DATABASE.conn.rollback()
-        else:
-            DATABASE.conn.commit()
+                try:
+                    args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in newitem).decode("utf-8")
+                    DATABASE.cur.execute("INSERT INTO cutting VALUES " + args_str)
+                except:
+                    DATABASE.conn.rollback()
+                    api, kid = item[0][0], item[0][1]
+                    sql = "INSERT INTO errors VALUES (%s, %s, %s)"
+                    DATABASE.cur.execute(sql, (api, kid, "cutting"))
+                    DATABASE.conn.commit()
+            else:
+                DATABASE.conn.commit()
 
     def store_casing(self, item):
         '''
         Store casing to table
         '''
-        try:
-            args_str = b','.join(
-                DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
-            DATABASE.cur.execute("INSERT INTO casing VALUES " + args_str)
-        except:
-            DATABASE.conn.rollback()
+        if item:
             try:
                 args_str = b','.join(
                     DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
                 DATABASE.cur.execute("INSERT INTO casing VALUES " + args_str)
             except:
                 DATABASE.conn.rollback()
-        else:
-            DATABASE.conn.commit()
+                try:
+                    args_str = b','.join(
+                        DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+                    DATABASE.cur.execute("INSERT INTO casing VALUES " + args_str)
+                except:
+                    DATABASE.conn.rollback()
+                    api, kid = item[0][0], item[0][1]
+                    sql = "INSERT INTO errors VALUES (%s, %s, %s)"
+                    DATABASE.cur.execute(sql, (api, kid, "casing"))
+                    DATABASE.conn.commit()
+            else:
+                DATABASE.conn.commit()
 
     def store_pf(self, item):
         '''
         Store Perforation to table
         '''
-        try:
-            args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
-            DATABASE.cur.execute("INSERT INTO Perforation VALUES " + args_str)
-        except:
-            DATABASE.conn.rollback()
+        if item:
             try:
                 args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
                 DATABASE.cur.execute("INSERT INTO Perforation VALUES " + args_str)
             except:
                 DATABASE.conn.rollback()
-        else:
-            DATABASE.conn.commit()
+                try:
+                    args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+                    DATABASE.cur.execute("INSERT INTO Perforation VALUES " + args_str)
+                except:
+                    DATABASE.conn.rollback()
+                    api, kid = item[0][0], item[0][1]
+                    sql = "INSERT INTO errors VALUES (%s, %s, %s)"
+                    DATABASE.cur.execute(sql, (api, kid, "Perforation"))
+                    DATABASE.conn.commit()
+            else:
+                DATABASE.conn.commit()

@@ -345,6 +345,9 @@ class Crawler(scrapy.Spider):
                 DATABASE.cur.execute("INSERT INTO tops VALUES " + args_str)
             except:
                 DATABASE.conn.rollback()
+                sql = "INSERT INTO errors VALUES (%s, %s, %s)"
+                DATABASE.cur.execute(sql, (api, kid, "Tops"))
+                DATABASE.conn.commit()
         else:
             DATABASE.conn.commit()
 
@@ -455,5 +458,8 @@ class Crawler(scrapy.Spider):
                     DATABASE.cur.copy_from(f, 'oilProduction', sep=';')
             except:
                 DATABASE.conn.rollback()
+                sql = "INSERT INTO errors VALUES (%s, %s, %s)"
+                DATABASE.cur.execute(sql, (api, kid, "oilproduction"))
+                DATABASE.conn.commit()
         else:
             DATABASE.conn.commit()
