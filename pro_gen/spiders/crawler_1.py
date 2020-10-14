@@ -385,15 +385,17 @@ class Crawler(scrapy.Spider):
         api = response.meta.get('api')
 
         # Setup appropriate path and create directory
+        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY))):
+            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY)))
         if len(api) > 4:
             pass
         else:
             api = 'NOAPI'
 
-        if not os.path.isdir(os.path.join(STORAGE_PATH, "docs", kid+'_'+api)):
-            os.mkdir(os.path.join(STORAGE_PATH, "docs", kid+'_'+api))
+        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY), kid+'_'+api)):
+            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY), kid+'_'+api))
 
-        path = os.path.join(STORAGE_PATH, "docs", kid+'_'+api, filename)
+        path = os.path.join(STORAGE_PATH, str(COUNTY), kid+'_'+api, filename)
 
         # Save the file
 
@@ -419,11 +421,14 @@ class Crawler(scrapy.Spider):
 
         # Setup appropriate path and create directory
 
-        if not os.path.isdir(os.path.join(STORAGE_PATH, "docs", kid+'_'+api)):
-            os.mkdir(os.path.join(STORAGE_PATH, "docs", kid+'_'+api))
+        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY))):
+            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY)))
 
-        path = os.path.join(STORAGE_PATH, "docs", kid+'_'+api, filename)
-        dirpath = os.path.join(STORAGE_PATH, "docs", kid+'_'+api)
+        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY), kid+'_'+api)):
+            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY), kid+'_'+api))
+
+        path = os.path.join(STORAGE_PATH, str(COUNTY), kid+'_'+api, filename)
+        dirpath = os.path.join(STORAGE_PATH, str(COUNTY), kid+'_'+api)
 
         self.logger.info('Saving txt %s', path)
 
