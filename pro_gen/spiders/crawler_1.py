@@ -42,14 +42,16 @@ class Crawler(scrapy.Spider):
         wellColumn = response.css("tr~ tr+ tr a:nth-child(1)").xpath("@href").extract()
 
         # Itetrate Through All links per page
+        self.logger.info('No. of links: %s', len(wellColumn))
         if len(wellColumn) > 3:
             for a in wellColumn:
-                yield response.follow(a,
-                            callback=self.get_data)
+                if len(a)<80:
+                    yield response.follow(a,
+                                callback=self.get_data)
             
             page += 1
             yield response.follow(
-                f"https://chasm.kgs.ku.edu/ords/qualified.ogw5.SelectWells?f_t=&f_r=&ew=W&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY}&f_ws=ALL&f_api=&sort_by=&f_pg={page}",
+                    f"https://chasm.kgs.ku.edu/ords/qualified.ogw5.SelectWells?f_t=&f_r=&ew=W&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY}&f_ws=ALL&f_api=&sort_by=&f_pg={page}",
                 callback=self.start_scraping)
 
     def get_data(self, response):
@@ -61,6 +63,7 @@ class Crawler(scrapy.Spider):
         # Use KID of current link for file and folder names
 
         global CURRENTKID, CURRENTAPI
+        CURRENTKID, CURRENTAPI = '', ''
         # Collect WH table and Send to Pipeline (Multiple css elector path might be present)
 
         well_data = response.css('hr+ table tr:nth-child(1) ::text').extract()
@@ -68,12 +71,12 @@ class Crawler(scrapy.Spider):
         well_data2 = response.css("table:nth-child(5) tr:nth-child(1) ::text").extract()
 
         # Simple check for valid data
-        if 'API: ' in well_data:
+        if 'API: ' in well_data or 'KID: ' in well_data:
             self.items['wh'] = well_data
             # Set KID for current link
             CURRENTAPI = well_data[well_data.index('API: ') + 1].replace("\n", "")
             CURRENTKID = well_data[well_data.index('KID: ') + 1].replace("\n", "")
-        elif 'API: ' in well_data2:
+        elif 'API: ' in well_data2  or 'KID: ' in well_data2:
             self.items['wh'] = well_data2
             # Set KID for current link
             CURRENTAPI = well_data2[well_data2.index('API: ') + 1].replace("\n", "")
@@ -142,7 +145,7 @@ class Crawler(scrapy.Spider):
         if "Tops Data" in headers:
             tops = response.css(f'table:nth-child({(headers.index("Tops Data") + 1) * 2}) td::text').extract()
 
-            if len(tops) <= 5 and tops:
+            if len(tops) <= 3 and tops:
                 # Redirect to tops table page
 
                 topspage = response.css(
@@ -162,6 +165,7 @@ class Crawler(scrapy.Spider):
 
         toggleEngineering = response.css("hr+ table a").xpath("@href").extract()
         toggleEngineeringText = response.css("hr+ table a::text").extract()
+        self.items['api'], self.items['kid'] = CURRENTAPI, CURRENTKID
 
         # Change function if Engineering Data Page is found
         yield self.items
@@ -179,6 +183,8 @@ class Crawler(scrapy.Spider):
         global CURRENTKID, CURRENTAPI
         CURRENTKID, kid = response.meta.get('kid'), response.meta.get('kid')
         CURRENTAPI, api = response.meta.get('api'), response.meta.get('api')
+        self.logger.info('Switched to Engineering Data: KID= %s', CURRENTKID)
+
         self.items['api'], self.items['kid'] = api, kid
         # Get All H3 tags to recognise all headings inside tables in the page
 
@@ -216,6 +222,7 @@ class Crawler(scrapy.Spider):
         # check if cuttings tabale is present, if present, Send to pipeline
 
         if "Cuttings Data" in headers:
+            self.logger.info('Cuttings Data present: KID= %s', CURRENTKID)
             cutting = response.css(f'table:nth-child({(headers.index("Cuttings Data") + 1) * 2}) ::text').extract()
             if cutting:
                 if 3 < len(cutting) < 15:
@@ -245,6 +252,7 @@ class Crawler(scrapy.Spider):
         # Check for oil Production page. If so redirect and initiate .txt file Download
 
         if "Oil Production Data" in headers:
+            self.logger.info('Oil Production Data present: KID= %s', CURRENTKID)
             oil_production = response.css('h3+ p a').xpath("@href").extract()
 
             if oil_production:
@@ -254,9 +262,10 @@ class Crawler(scrapy.Spider):
                     meta={'kid': CURRENTKID, 'api': CURRENTAPI})
 
         if "Tops Data" in headers:
+            self.logger.info('Tops Data present: KID= %s', CURRENTKID)
             tops = response.css(f'table:nth-child({(headers.index("Tops Data") + 1) * 2}) td::text').extract()
 
-            if len(tops) <= 5:
+            if len(tops) <= 3:
                 # Redirect to tops table page
 
                 topspage = response.css(
@@ -270,7 +279,7 @@ class Crawler(scrapy.Spider):
                 # Save tops table data
 
                 topspage = response.css(f'table:nth-child({(headers.index("Tops Data") + 1) * 2}) td::text').extract()
-                self.topsSegregation(topspage)
+                self.topsSegregation(topspage, CURRENTKID, CURRENTAPI)
 
         yield self.items
 
@@ -279,10 +288,13 @@ class Crawler(scrapy.Spider):
         This function collects tops data from redirected page
         '''
         # Collect the table
+        kid = response.meta.get('kid')
+        api = response.meta.get('api')
         fulltable = response.css('tr+ tr td::text').extract()
-        self.topsSegregation(fulltable[2:])
+        self.logger.info('Tops data in new page: KID= %s', kid)
+        self.topsSegregation(fulltable[2:], kid, api)
 
-    def topsSegregation(self, data):
+    def topsSegregation(self, data, kid, api):
         '''
         This function stores Tops table data into database
         '''
@@ -313,16 +325,18 @@ class Crawler(scrapy.Spider):
                     temp.insert(1, '')
                     temp.insert(2, '')
                 if len(temp) == 6:
-                    topsFilteredData.append([CURRENTAPI, CURRENTKID] + [temp[0] + temp[1]] + temp[2:])
+                    topsFilteredData.append([api, kid] + [temp[0] + temp[1]] + temp[2:])
                 temp = []
 
         # Push to database
         try:
+            self.logger.info('Storing Tops data: KID= %s', kid)
             args_str = b','.join(
                 DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in topsFilteredData).decode(
                 "utf-8")
             DATABASE.cur.execute("INSERT INTO tops VALUES " + args_str)
         except:
+            self.logger.info('Tops data failed: KID= %s', kid)
             DATABASE.conn.rollback()
             try:
                 args_str = b','.join(
