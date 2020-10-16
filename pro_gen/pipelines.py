@@ -187,49 +187,35 @@ class ProGenPipeline():
         '''
         Store WH to table
         '''
-        if item:
-            try:
-                DATABASE.cur.execute(
-                    "INSERT INTO WH VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                    tuple(item))
-            except:
-                DATABASE.conn.rollback()
-                try:
-                    DATABASE.cur.execute(
-                        "INSERT INTO WH VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                        tuple(item))
-                except:
-                    DATABASE.conn.rollback()
-                    api, kid = item[0], item[1]
-                    sql = "INSERT INTO errors VALUES (%s, %s, %s)"
-                    DATABASE.cur.execute(sql, (api, kid, "WH"))
-                    DATABASE.conn.commit()
-            else:
-                DATABASE.conn.commit()
+        try:
+            DATABASE.cur.execute(
+                "INSERT INTO WH VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                tuple(item))
+        except:
+            DATABASE.conn.rollback()
+            api, kid = item[0], item[1]
+            sql = "INSERT INTO errors VALUES (%s, %s, %s)"
+            DATABASE.cur.execute(sql, (api, kid, "WH"))
+            DATABASE.conn.commit()
+        else:
+            DATABASE.conn.commit()
 
     def store_ip(self, item):
         '''
         Store IP to table
         '''
-        if item:
-            try:
-                DATABASE.cur.execute(
-                    "INSERT INTO IP VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                    tuple(item))
-            except:
-                DATABASE.conn.rollback()
-                try:
-                    DATABASE.cur.execute(
-                        "INSERT INTO IP VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                        tuple(item))
-                except:
-                    DATABASE.conn.rollback()
-                    api, kid = item[0], item[1]
-                    sql = "INSERT INTO errors VALUES (%s, %s, %s)"
-                    DATABASE.cur.execute(sql, (api, kid, "IP"))
-                    DATABASE.conn.commit()
-            else:
-                DATABASE.conn.commit()
+        try:
+            DATABASE.cur.execute(
+                "INSERT INTO IP VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                tuple(item))
+        except:
+            DATABASE.conn.rollback()
+            api, kid = item[0], item[1]
+            sql = "INSERT INTO errors VALUES (%s, %s, %s)"
+            DATABASE.cur.execute(sql, (api, kid, "IP"))
+            DATABASE.conn.commit()
+        else:
+            DATABASE.conn.commit()
 
     def store_cutting(self, item):
         '''
@@ -242,66 +228,47 @@ class ProGenPipeline():
                 t.append('')
             newitem.append(t)
 
-        if item:
-            try:
-                args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in newitem).decode("utf-8")
-                DATABASE.cur.execute("INSERT INTO cutting VALUES " + args_str)
-            except:
-                DATABASE.conn.rollback()
-                try:
-                    args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in newitem).decode("utf-8")
-                    DATABASE.cur.execute("INSERT INTO cutting VALUES " + args_str)
-                except:
-                    DATABASE.conn.rollback()
-                    api, kid = item[0][0], item[0][1]
-                    sql = "INSERT INTO errors VALUES (%s, %s, %s)"
-                    DATABASE.cur.execute(sql, (api, kid, "cutting"))
-                    DATABASE.conn.commit()
-            else:
-                DATABASE.conn.commit()
+        try:
+            args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in newitem).decode("utf-8")
+            DATABASE.cur.execute("INSERT INTO cutting VALUES " + args_str)
+        except:
+            DATABASE.conn.rollback()
+            api, kid = item[0][0], item[0][1]
+            sql = "INSERT INTO errors VALUES (%s, %s, %s)"
+            DATABASE.cur.execute(sql, (api, kid, "cutting"))
+            DATABASE.conn.commit()
+        else:
+            DATABASE.conn.commit()
 
     def store_casing(self, item):
         '''
         Store casing to table
         '''
-        if item:
-            try:
-                args_str = b','.join(
-                    DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
-                DATABASE.cur.execute("INSERT INTO casing VALUES " + args_str)
-            except:
-                DATABASE.conn.rollback()
-                try:
-                    args_str = b','.join(
-                        DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
-                    DATABASE.cur.execute("INSERT INTO casing VALUES " + args_str)
-                except:
-                    DATABASE.conn.rollback()
-                    api, kid = item[0][0], item[0][1]
-                    sql = "INSERT INTO errors VALUES (%s, %s, %s)"
-                    DATABASE.cur.execute(sql, (api, kid, "casing"))
-                    DATABASE.conn.commit()
-            else:
-                DATABASE.conn.commit()
+        try:
+            args_str = b','.join(
+                DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+            DATABASE.cur.execute("INSERT INTO casing VALUES " + args_str)
+        except:
+            DATABASE.conn.rollback()
+            api, kid = item[0][0], item[0][1]
+            sql = "INSERT INTO errors VALUES (%s, %s, %s)"
+            DATABASE.cur.execute(sql, (api, kid, "casing"))
+            DATABASE.conn.commit()
+        else:
+            DATABASE.conn.commit()
 
     def store_pf(self, item):
         '''
         Store Perforation to table
         '''
-        if item:
-            try:
-                args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
-                DATABASE.cur.execute("INSERT INTO Perforation VALUES " + args_str)
-            except:
-                DATABASE.conn.rollback()
-                try:
-                    args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
-                    DATABASE.cur.execute("INSERT INTO Perforation VALUES " + args_str)
-                except:
-                    DATABASE.conn.rollback()
-                    api, kid = item[0][0], item[0][1]
-                    sql = "INSERT INTO errors VALUES (%s, %s, %s)"
-                    DATABASE.cur.execute(sql, (api, kid, "Perforation"))
-                    DATABASE.conn.commit()
-            else:
-                DATABASE.conn.commit()
+        try:
+            args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+            DATABASE.cur.execute("INSERT INTO Perforation VALUES " + args_str)
+        except:
+            DATABASE.conn.rollback()
+            api, kid = item[0][0], item[0][1]
+            sql = "INSERT INTO errors VALUES (%s, %s, %s)"
+            DATABASE.cur.execute(sql, (api, kid, "Perforation"))
+            DATABASE.conn.commit()
+        else:
+            DATABASE.conn.commit()

@@ -338,16 +338,9 @@ class Crawler(scrapy.Spider):
         except:
             self.logger.info('Tops data failed: KID= %s', kid)
             DATABASE.conn.rollback()
-            try:
-                args_str = b','.join(
-                    DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in topsFilteredData).decode(
-                    "utf-8")
-                DATABASE.cur.execute("INSERT INTO tops VALUES " + args_str)
-            except:
-                DATABASE.conn.rollback()
-                sql = "INSERT INTO errors VALUES (%s, %s, %s)"
-                DATABASE.cur.execute(sql, (api, kid, "Tops"))
-                DATABASE.conn.commit()
+            sql = "INSERT INTO errors VALUES (%s, %s, %s)"
+            DATABASE.cur.execute(sql, (api, kid, "Tops"))
+            DATABASE.conn.commit()
         else:
             DATABASE.conn.commit()
 
@@ -457,14 +450,8 @@ class Crawler(scrapy.Spider):
                 DATABASE.cur.copy_from(f, 'oilProduction', sep=';')
         except:
             DATABASE.conn.rollback()
-            try:
-                with open(path, 'r') as f:
-                    # next(f) # Skip the header row.
-                    DATABASE.cur.copy_from(f, 'oilProduction', sep=';')
-            except:
-                DATABASE.conn.rollback()
-                sql = "INSERT INTO errors VALUES (%s, %s, %s)"
-                DATABASE.cur.execute(sql, (api, kid, "oilproduction"))
-                DATABASE.conn.commit()
+            sql = "INSERT INTO errors VALUES (%s, %s, %s)"
+            DATABASE.cur.execute(sql, (api, kid, "oilproduction"))
+            DATABASE.conn.commit()
         else:
             DATABASE.conn.commit()
