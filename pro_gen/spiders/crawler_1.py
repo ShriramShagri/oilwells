@@ -48,11 +48,10 @@ class Crawler(scrapy.Spider):
                 if len(a)<80:
                     yield response.follow(a,
                                 callback=self.get_data)
-            if page < 10:
-                page += 1
-                yield response.follow(
-                        f"https://chasm.kgs.ku.edu/ords/qualified.ogw5.SelectWells?f_t=&f_r=&ew=W&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY}&f_ws=ALL&f_api=&sort_by=&f_pg={page}",
-                    callback=self.start_scraping)
+            page += 1
+            yield response.follow(
+                    f"https://chasm.kgs.ku.edu/ords/qualified.ogw5.SelectWells?f_t=&f_r=&ew=W&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY}&f_ws=ALL&f_api=&sort_by=&f_pg={page}",
+                callback=self.start_scraping)
 
     def get_data(self, response):
 
