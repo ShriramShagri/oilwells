@@ -48,11 +48,11 @@ class Crawler(scrapy.Spider):
                 if len(a)<80:
                     yield response.follow(a,
                                 callback=self.get_data)
-            
-            page += 1
-            yield response.follow(
-                    f"https://chasm.kgs.ku.edu/ords/qualified.ogw5.SelectWells?f_t=&f_r=&ew=W&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY}&f_ws=ALL&f_api=&sort_by=&f_pg={page}",
-                callback=self.start_scraping)
+            if page < 10:
+                page += 1
+                yield response.follow(
+                        f"https://chasm.kgs.ku.edu/ords/qualified.ogw5.SelectWells?f_t=&f_r=&ew=W&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY}&f_ws=ALL&f_api=&sort_by=&f_pg={page}",
+                    callback=self.start_scraping)
 
     def get_data(self, response):
 
@@ -104,41 +104,41 @@ class Crawler(scrapy.Spider):
 
         if "ACO-1 and Driller's Logs" in headers:
             tempdownloadlist = list(TODOWNLOAD)
-            pdfherf = response.css('b+ ul a::attr(href)').extract()
-            pdf = response.css('b+ ul a::text').extract()
+            # pdfherf = response.css('b+ ul a::attr(href)').extract()
+            # pdf = response.css('b+ ul a::text').extract()
 
-            drillreportherf = response.css('tr:nth-child(3) a::attr(href)').extract()
-            drillreport = response.css('tr:nth-child(3) a::text').extract()
-            if 'Digital Wellbore information for this horizontal well is available.' in drillreport:
-                tempdownloadlist.remove('Directional Drilling Report')
-                url = drillreportherf[
-                    drillreport.index('Digital Wellbore information for this horizontal well is available.')]
-                yield Request(
-                    url=response.urljoin(url),
-                    callback=self.save_file,
-                    meta={'filename': 'Directional Drilling Report' + "." + url.split('.')[-1],  'kid': CURRENTKID, 'api': CURRENTAPI}
-                )
+            # drillreportherf = response.css('tr:nth-child(3) a::attr(href)').extract()
+            # drillreport = response.css('tr:nth-child(3) a::text').extract()
+            # if 'Digital Wellbore information for this horizontal well is available.' in drillreport:
+            #     tempdownloadlist.remove('Directional Drilling Report')
+            #     url = drillreportherf[
+            #         drillreport.index('Digital Wellbore information for this horizontal well is available.')]
+            #     yield Request(
+            #         url=response.urljoin(url),
+            #         callback=self.save_file,
+            #         meta={'filename': 'Directional Drilling Report' + "." + url.split('.')[-1],  'kid': CURRENTKID, 'api': CURRENTAPI}
+            #     )
 
-            count = 0
-            for i in range(len(pdf)):
-                if pdf[i] in tempdownloadlist:
-                    count += 1
-                    yield Request(
-                        url=response.urljoin(pdfherf[i]),
-                        callback=self.save_file,
-                        meta={'filename': pdf[i] + str(count) + "." + pdfherf[i].split('.')[-1],  'kid': CURRENTKID, 'api': CURRENTAPI}
-                    )
+            # count = 0
+            # for i in range(len(pdf)):
+            #     if pdf[i] in tempdownloadlist:
+            #         count += 1
+            #         yield Request(
+            #             url=response.urljoin(pdfherf[i]),
+            #             callback=self.save_file,
+            #             meta={'filename': pdf[i] + str(count) + "." + pdfherf[i].split('.')[-1],  'kid': CURRENTKID, 'api': CURRENTAPI}
+            #         )
 
         # Check for oil Production page. If so redirect and initiate .txt file Download
 
         if "Oil Production Data" in headers:
             oil_production = response.css('h3+ p a').xpath("@href").extract()
 
-            if oil_production:
-                yield response.follow(
-                    oil_production.pop().replace('.MainLease?', '.MonthSave?'),
-                    callback=self.getOilData,
-                    meta={'kid': CURRENTKID, 'api': CURRENTAPI})  # replace mainlease to skip a page
+            # if oil_production:
+            #     yield response.follow(
+            #         oil_production.pop().replace('.MainLease?', '.MonthSave?'),
+            #         callback=self.getOilData,
+            #         meta={'kid': CURRENTKID, 'api': CURRENTAPI})  # replace mainlease to skip a page
 
         # check if Tops tabale is present, if present save to database
 
@@ -159,7 +159,7 @@ class Crawler(scrapy.Spider):
                 # Save tops table data
 
                 topspage = response.css(f'table:nth-child({(headers.index("Tops Data") + 1) * 2}) td::text').extract()
-                self.topsSegregation(topspage)
+                self.topsSegregation(topspage, CURRENTKID, CURRENTAPI)
 
         # Check if Engineering Data Page is present
 
@@ -239,15 +239,15 @@ class Crawler(scrapy.Spider):
             cuttinghref = response.css('b+ ul a::attr(href)').extract()
             cutting = response.css('b+ ul a::text').extract()
 
-            count = 0
-            for i in range(len(cutting)):
-                if cutting[i] in TODOWNLOAD:
-                    count += 1
-                    yield Request(
-                        url=response.urljoin(cuttinghref[i]),
-                        callback=self.save_file,
-                        meta={'filename': cutting[i] + str(count) + cuttinghref[i].split('.')[-1], 'kid': CURRENTKID, 'api': CURRENTAPI}
-                    )
+            # count = 0
+            # for i in range(len(cutting)):
+            #     if cutting[i] in TODOWNLOAD:
+            #         count += 1
+            #         yield Request(
+            #             url=response.urljoin(cuttinghref[i]),
+            #             callback=self.save_file,
+            #             meta={'filename': cutting[i] + str(count) + cuttinghref[i].split('.')[-1], 'kid': CURRENTKID, 'api': CURRENTAPI}
+            #         )
 
         # Check for oil Production page. If so redirect and initiate .txt file Download
 
@@ -255,11 +255,11 @@ class Crawler(scrapy.Spider):
             self.logger.info('Oil Production Data present: KID= %s', CURRENTKID)
             oil_production = response.css('h3+ p a').xpath("@href").extract()
 
-            if oil_production:
-                yield response.follow(
-                    oil_production.pop().replace('.MainLease?', '.MonthSave?'),
-                    callback=self.getOilData,
-                    meta={'kid': CURRENTKID, 'api': CURRENTAPI})
+            # if oil_production:
+            #     yield response.follow(
+            #         oil_production.pop().replace('.MainLease?', '.MonthSave?'),
+            #         callback=self.getOilData,
+            #         meta={'kid': CURRENTKID, 'api': CURRENTAPI})
 
         if "Tops Data" in headers:
             self.logger.info('Tops Data present: KID= %s', CURRENTKID)
