@@ -118,3 +118,7 @@ Directional Suyvey: https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWel
 > No elements in pf table
 
 https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayEng?f_kid=1044564317
+
+> No engineering data even having link
+
+https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1046936239
