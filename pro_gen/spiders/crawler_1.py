@@ -144,7 +144,7 @@ class Crawler(scrapy.Spider):
         if "Tops Data" in headers:
             tops = response.css(f'table:nth-child({(headers.index("Tops Data") + 1) * 2}) td::text').extract()
 
-            if len(tops) <= 3 and tops:
+            if (len(tops) <= 3 or "Because there are more than 30 tops for this well, " in tops) and tops:
                 # Redirect to tops table page
 
                 topspage = response.css(
@@ -265,7 +265,7 @@ class Crawler(scrapy.Spider):
             self.logger.info('Tops Data present: KID= %s', CURRENTKID)
             tops = response.css(f'table:nth-child({(headers.index("Tops Data") + 1) * 2}) td::text').extract()
 
-            if len(tops) <= 3:
+            if (len(tops) <= 3 or "Because there are more than 30 tops for this well, " in tops) and tops:
                 # Redirect to tops table page
 
                 topspage = response.css(
