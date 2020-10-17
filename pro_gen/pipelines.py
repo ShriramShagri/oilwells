@@ -19,6 +19,7 @@ class ProGenPipeline():
         '''
         Check for all the data sent and handle them with care 
         '''
+        keysInItem = item.keys()
         def checklist(s1, s2, l):
             '''
             Just a repeated set of lines
@@ -31,7 +32,7 @@ class ProGenPipeline():
                 return False
 
         # if wh table is present, gather relevant data and add to table
-        try:
+        if 'wh' in keysInItem:
             whRawData = [i.replace('\n', "") for i in item['wh']]
             whFilteredData = []
             for clms in range(len(WHCOLUMS)-1):
@@ -59,127 +60,100 @@ class ProGenPipeline():
 
             self.store_wh(whFilteredData)
             essentials = [whFilteredData[0], whFilteredData[1]]
-        except :
+        else:
             essentials = [item['api'], item['kid']]
         
 
 
          # if casing table is present, pass proper param
 
-        try:
-            if item['ip']:
-                ipRawData = [i.replace('\n', "") for i in item['ip']]
-                ipFilteredData_temp = []
+        if 'ip' in keysInItem:
+            ipRawData = [i.replace('\n', "") for i in item['ip']]
+            ipFilteredData_temp = []
 
-                for clms in range(len(IPCOLUMNS)-1):
-                    if checklist(IPCOLUMNS[clms], IPCOLUMNS[clms + 1], ipRawData):
-                        ipFilteredData_temp.append(ipRawData[ipRawData.index(IPCOLUMNS[clms]) + 1])
-                    else:
-                        ipFilteredData_temp.append("") 
-                
-                ipFilteredData = list(essentials)
-                ipFilteredData.extend(ipFilteredData_temp)
+            for clms in range(len(IPCOLUMNS)-1):
+                if checklist(IPCOLUMNS[clms], IPCOLUMNS[clms + 1], ipRawData):
+                    ipFilteredData_temp.append(ipRawData[ipRawData.index(IPCOLUMNS[clms]) + 1])
+                else:
+                    ipFilteredData_temp.append("") 
+            
+            ipFilteredData = list(essentials)
+            ipFilteredData.extend(ipFilteredData_temp)
 
-                # Add to table :)
+            # Add to table :)
 
-                self.store_ip(ipFilteredData)
-        except:
-            pass
+            self.store_ip(ipFilteredData, essentials)
 
         # if casing table is present, pass proper param
 
-        try:
-            if item['casing']:
-                casingRawData = item['casing'][item['casing'].index('Additives') + 3:]
-                casingRawData = [i.replace('\n', "") for i in casingRawData]
-                casingFilteredData = []
+        if 'casing' in keysInItem:
+            casingRawData = item['casing'][item['casing'].index('Additives') + 3:]
+            casingRawData = [i.replace('\n', "") for i in casingRawData]
+            casingFilteredData = []
 
-                # Let's hope the casing data repeats itself after 17 elements 
-                offset = 0
-                for i in range(len(casingRawData) // 17):
-                    temp = list()
-                    temp.extend(essentials)
-                    if casingRawData[i * 17 + 1 + offset] == '':
-                        offset += 1
-                    if (i + 1) * 17 + offset <= len(casingRawData):
-                        temp.extend(casingRawData[i * 17 + 1 + offset:(i + 1) * 17 + offset:2])
-                        casingFilteredData.append(temp)
-                
-                # Add to table :)
-
-                self.store_casing(casingFilteredData)
-
-        except:
-            pass
-
-        # if perforation table is present, pass proper param
-        try:
-            if item['pf']:
-                pfRawData = item['pf'][item['pf'].index('Depth') + 3:]
-                pfRawData = [i.replace('\n', "") for i in pfRawData]
-                pfFilteredData = []
-            if len(pfRawData) % 9 == 0:
-                for i in range(len(pfRawData) // 9):
-                    temp = list()
-                    temp.extend(essentials)
-                    temp.extend(pfRawData[i * 9 + 1:(i + 1) * 9:2])
-                    pfFilteredData.append(temp)
-            elif len(pfRawData) % 8 == 0:
-                for i in range(len(pfRawData) // 8):
-                    temp = list()
-                    temp.extend(essentials)
-                    temp.extend(pfRawData[i * 8 + 1:(i + 1) * 8:2])
-                    pfFilteredData.append(temp)
-            elif len(pfRawData) % 7 == 1:
-                pfRawData.pop(len(pfRawData//2))
-                for i in range(len(pfRawData) // 7):
-                    temp = list()
-                    temp.extend(essentials)
-                    temp.extend(pfRawData[i * 7 + 1:(i + 1) * 7:2])
-                    pfFilteredData.append(temp)
-            
-            # Remove empty rows
-            # toRemove = []
-            # for row in pfFilteredData:
-            #     if row.count("") >= 3:
-            #         toRemove.append(row)
-            # for items in toRemove:
-            #     pfFilteredData.remove(pfFilteredData.index(items))
+            # Let's hope the casing data repeats itself after 17 elements 
+            offset = 0
+            for i in range(len(casingRawData) // 17):
+                temp = list()
+                temp.extend(essentials)
+                if casingRawData[i * 17 + 1 + offset] == '':
+                    offset += 1
+                if (i + 1) * 17 + offset <= len(casingRawData):
+                    temp.extend(casingRawData[i * 17 + 1 + offset:(i + 1) * 17 + offset:2])
+                    casingFilteredData.append(temp)
             
             # Add to table :)
 
-            self.store_pf(pfFilteredData)
-            
+            self.store_casing(casingFilteredData, essentials)
 
-        except Exception as e:
-            print(e)
+        # if perforation table is present, pass proper param
+        if 'pf' in keysInItem:
+            pfRawData = []
+            for i in item['pf']:
+                pfRawData.append(i.replace('<td>', '').replace('</td>', ''))
+            # pfRawData = item['pf'][item['pf'].index('Depth') + 3:]
+            # pfRawData = [i.replace('\n', "") for i in pfRawData]
+            pfFilteredData = []
+            # if len(pfRawData) % 4 == 0:
+            for i in range(len(pfRawData) // 4):
+                temp = list()
+                temp.extend(essentials)
+                temp.extend(pfRawData[i * 4 :(i + 1) * 4])
+                pfFilteredData.append(temp)
+        
+        # Remove empty rows
+        # toRemove = []
+        # for row in pfFilteredData:
+        #     if row.count("") >= 3:
+        #         toRemove.append(row)
+        # for items in toRemove:
+        #     pfFilteredData.remove(pfFilteredData.index(items))
+        
+        # Add to table :)
+            self.store_pf(pfFilteredData, essentials)
 
         # if cuttings table is present, pass proper param
 
-        try:
-            if item['cutting']:
-                # I can't explain these :p
-                cuttingRawData = []
-                cuttingRawDatatemp = item['cutting'][2:]
-                cuttingRawDatatemp = [i.replace('\n', "") for i in cuttingRawDatatemp]
-                filterString = '$_%&^%'.join(cuttingRawDatatemp)
-                filterList = filter(None, filterString.split("Box Number: "))
-                for sts in filterList:
-                    cuttingRawData.append(list(filter(None, sts.split('$_%&^%'))))
-                cuttingFilteredData = []
+        if 'cutting' in keysInItem:
+            # I can't explain these :p
+            cuttingRawData = []
+            cuttingRawDatatemp = item['cutting'][2:]
+            cuttingRawDatatemp = [i.replace('\n', "") for i in cuttingRawDatatemp]
+            filterString = '$_%&^%'.join(cuttingRawDatatemp)
+            filterList = filter(None, filterString.split("Box Number: "))
+            for sts in filterList:
+                cuttingRawData.append(list(filter(None, sts.split('$_%&^%'))))
+            cuttingFilteredData = []
 
-                for j in cuttingRawData:
-                    temp = list()
-                    temp.extend(essentials)
-                    temp.extend(j[::2])
-                    cuttingFilteredData.append(temp)
+            for j in cuttingRawData:
+                temp = list()
+                temp.extend(essentials)
+                temp.extend(j[::2])
+                cuttingFilteredData.append(temp)
 
-                # Add to table :)
+            # Add to table :)
 
-                self.store_cutting(cuttingFilteredData)
-
-        except:
-            pass
+            self.store_cutting(cuttingFilteredData, essentials)
 
         return item
 
@@ -191,16 +165,16 @@ class ProGenPipeline():
             DATABASE.cur.execute(
                 "INSERT INTO WH VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 tuple(item))
-        except:
+        except Exception as e:
             DATABASE.conn.rollback()
             api, kid = item[0], item[1]
-            sql = "INSERT INTO errors VALUES (%s, %s, %s)"
-            DATABASE.cur.execute(sql, (api, kid, "WH"))
+            sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
+            DATABASE.cur.execute(sql, (api, kid, str(e), "WH"))
             DATABASE.conn.commit()
         else:
             DATABASE.conn.commit()
 
-    def store_ip(self, item):
+    def store_ip(self, item, ess):
         '''
         Store IP to table
         '''
@@ -208,16 +182,16 @@ class ProGenPipeline():
             DATABASE.cur.execute(
             "INSERT INTO IP VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
             tuple(item))
-        except:
+        except Exception as e:
             DATABASE.conn.rollback()
-            api, kid = item[0], item[1]
-            sql = "INSERT INTO errors VALUES (%s, %s, %s)"
-            DATABASE.cur.execute(sql, (api, kid, "IP"))
+            api, kid = ess
+            sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
+            DATABASE.cur.execute(sql, (api, kid, str(e), "IP"))
             DATABASE.conn.commit()
         else:
             DATABASE.conn.commit()
 
-    def store_cutting(self, item):
+    def store_cutting(self, item, ess):
         '''
         Store Cuttings to table
         '''
@@ -231,16 +205,16 @@ class ProGenPipeline():
         try:
             args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in newitem).decode("utf-8")
             DATABASE.cur.execute("INSERT INTO cutting VALUES " + args_str)
-        except:
+        except Exception as e:
             DATABASE.conn.rollback()
-            api, kid = item[0][0], item[0][1]
-            sql = "INSERT INTO errors VALUES (%s, %s, %s)"
-            DATABASE.cur.execute(sql, (api, kid, "cutting"))
+            api, kid = ess
+            sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
+            DATABASE.cur.execute(sql, (api, kid, str(e), "cutting"))
             DATABASE.conn.commit()
         else:
             DATABASE.conn.commit()
 
-    def store_casing(self, item):
+    def store_casing(self, item, ess):
         '''
         Store casing to table
         '''
@@ -248,27 +222,27 @@ class ProGenPipeline():
             args_str = b','.join(
                 DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
             DATABASE.cur.execute("INSERT INTO casing VALUES " + args_str)
-        except:
+        except Exception as e:
             DATABASE.conn.rollback()
-            api, kid = item[0][0], item[0][1]
-            sql = "INSERT INTO errors VALUES (%s, %s, %s)"
-            DATABASE.cur.execute(sql, (api, kid, "casing"))
+            api, kid = ess
+            sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
+            DATABASE.cur.execute(sql, (api, kid, str(e), "casing"))
             DATABASE.conn.commit()
         else:
             DATABASE.conn.commit()
 
-    def store_pf(self, item):
+    def store_pf(self, item, ess):
         '''
         Store Perforation to table
         '''
         try:
             args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
             DATABASE.cur.execute("INSERT INTO Perforation VALUES " + args_str)
-        except:
+        except Exception as e:
             DATABASE.conn.rollback()
-            api, kid = item[0][0], item[0][1]
-            sql = "INSERT INTO errors VALUES (%s, %s, %s)"
-            DATABASE.cur.execute(sql, (api, kid, "Perforation"))
+            api, kid = ess
+            sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
+            DATABASE.cur.execute(sql, (api, kid, str(e), "Perforation"))
             DATABASE.conn.commit()
         else:
             DATABASE.conn.commit()

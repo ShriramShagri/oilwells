@@ -202,7 +202,7 @@ class Crawler(scrapy.Spider):
             # Collect pf table and Send to Pipeline (Multiple css elector path might be present)
 
             # FATAL: CSS SELECTOR TO BE FIXED!!!
-            perforation_data = response.css("table:nth-child(13) ::text").extract()
+            perforation_data = response.css("table:nth-child(13) tr+ tr td").extract()
 
             self.items['pf'] = perforation_data
 
@@ -335,11 +335,11 @@ class Crawler(scrapy.Spider):
                 DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in topsFilteredData).decode(
                 "utf-8")
             DATABASE.cur.execute("INSERT INTO tops VALUES " + args_str)
-        except:
+        except Exception as e:
             self.logger.info('Tops data failed: KID= %s', kid)
             DATABASE.conn.rollback()
-            sql = "INSERT INTO errors VALUES (%s, %s, %s)"
-            DATABASE.cur.execute(sql, (api, kid, "Tops"))
+            sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
+            DATABASE.cur.execute(sql, (api, kid, str(e), "Tops"))
             DATABASE.conn.commit()
         else:
             DATABASE.conn.commit()
@@ -448,10 +448,10 @@ class Crawler(scrapy.Spider):
             with open(path, 'r') as f:
                 # next(f) # Skip the header row.
                 DATABASE.cur.copy_from(f, 'oilProduction', sep=';')
-        except:
+        except Exception as e:
             DATABASE.conn.rollback()
-            sql = "INSERT INTO errors VALUES (%s, %s, %s)"
-            DATABASE.cur.execute(sql, (api, kid, "oilproduction"))
+            sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
+            DATABASE.cur.execute(sql, (api, kid, str(e), "oilproduction"))
             DATABASE.conn.commit()
         else:
             DATABASE.conn.commit()
