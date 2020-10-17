@@ -113,46 +113,46 @@ class ProGenPipeline():
             pass
 
         # if perforation table is present, pass proper param
-
         try:
             if item['pf']:
                 pfRawData = item['pf'][item['pf'].index('Depth') + 3:]
                 pfRawData = [i.replace('\n', "") for i in pfRawData]
                 pfFilteredData = []
-                if pfRawData % 9 == 0:
-                    for i in range(len(pfRawData) // 9):
-                        temp = list()
-                        temp.extend(essentials)
-                        temp.extend(pfRawData[i * 9 + 1:(i + 1) * 9:2])
-                        pfFilteredData.append(temp)
-                elif pfRawData % 8 == 0:
-                    for i in range(len(pfRawData) // 8):
-                        temp = list()
-                        temp.extend(essentials)
-                        temp.extend(pfRawData[i * 8 + 1:(i + 1) * 8:2])
-                        pfFilteredData.append(temp)
-                elif pfRawData % 7 == 1:
-                    pfRawData.pop(len(pfRawData//2))
-                    for i in range(len(pfRawData) // 7):
-                        temp = list()
-                        temp.extend(essentials)
-                        temp.extend(pfRawData[i * 7 + 1:(i + 1) * 7:2])
-                        pfFilteredData.append(temp)
-                
-                # Remove empty rows
-                toRemove = []
-                for row in pfFilteredData:
-                    if row.count("") >= 3:
-                        toRemove.append(row)
-                for items in toRemove:
-                    pfFilteredData.remove(pfFilteredData.index(items))
-                
-                # Add to table :)
+            if len(pfRawData) % 9 == 0:
+                for i in range(len(pfRawData) // 9):
+                    temp = list()
+                    temp.extend(essentials)
+                    temp.extend(pfRawData[i * 9 + 1:(i + 1) * 9:2])
+                    pfFilteredData.append(temp)
+            elif len(pfRawData) % 8 == 0:
+                for i in range(len(pfRawData) // 8):
+                    temp = list()
+                    temp.extend(essentials)
+                    temp.extend(pfRawData[i * 8 + 1:(i + 1) * 8:2])
+                    pfFilteredData.append(temp)
+            elif len(pfRawData) % 7 == 1:
+                pfRawData.pop(len(pfRawData//2))
+                for i in range(len(pfRawData) // 7):
+                    temp = list()
+                    temp.extend(essentials)
+                    temp.extend(pfRawData[i * 7 + 1:(i + 1) * 7:2])
+                    pfFilteredData.append(temp)
+            
+            # Remove empty rows
+            # toRemove = []
+            # for row in pfFilteredData:
+            #     if row.count("") >= 3:
+            #         toRemove.append(row)
+            # for items in toRemove:
+            #     pfFilteredData.remove(pfFilteredData.index(items))
+            
+            # Add to table :)
 
-                self.store_pf(pfFilteredData)
+            self.store_pf(pfFilteredData)
+            
 
-        except:
-            pass
+        except Exception as e:
+            print(e)
 
         # if cuttings table is present, pass proper param
 
@@ -206,8 +206,8 @@ class ProGenPipeline():
         '''
         try:
             DATABASE.cur.execute(
-                "INSERT INTO IP VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                tuple(item))
+            "INSERT INTO IP VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            tuple(item))
         except:
             DATABASE.conn.rollback()
             api, kid = item[0], item[1]
