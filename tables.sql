@@ -124,5 +124,6 @@ DROP TABLE IF EXISTS errors;
 CREATE TABLE errors(
 	api TEXT,
 	kid TEXT,
+   exception TEXT,
 	errortable TEXT
 );
