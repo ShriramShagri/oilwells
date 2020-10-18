@@ -122,3 +122,7 @@ https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayEng?f_kid=1044564317
 > No engineering data even having link
 
 https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1046936239
+
+> Extra columns in perforation table
+
+https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayEng?f_kid=1046070165
