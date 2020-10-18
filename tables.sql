@@ -127,3 +127,15 @@ CREATE TABLE errors(
    exception TEXT,
 	errortable TEXT
 );
+
+DROP TABLE IF EXISTS pf;
+CREATE TABLE pf(
+   API TEXT,
+   KID TEXT,
+   Shots_Per_Foot TEXT,
+   Perforation_top TEXT,
+   Perforation_bottom TEXT,
+   bridge_plug_type TEXT,
+   bridge_plug_set_at TEXT,
+   Material_Record TEXT
+);
