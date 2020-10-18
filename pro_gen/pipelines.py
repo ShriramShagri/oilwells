@@ -108,18 +108,26 @@ class ProGenPipeline():
 
         # if perforation table is present, pass proper param
         if 'pf' in keysInItem:
-            pfRawData = []
-            for i in item['pf']:
-                pfRawData.append(i.replace('<td>', '').replace('</td>', ''))
-            # pfRawData = item['pf'][item['pf'].index('Depth') + 3:]
-            # pfRawData = [i.replace('\n', "") for i in pfRawData]
-            pfFilteredData = []
-            # if len(pfRawData) % 4 == 0:
-            for i in range(len(pfRawData) // 4):
-                temp = list()
-                temp.extend(essentials)
-                temp.extend(pfRawData[i * 4 :(i + 1) * 4])
-                pfFilteredData.append(temp)
+            if len(item['pf']) > 2:
+                pfRawData = []
+                for i in item['pf']:
+                    pfRawData.append(i.replace('<td>', '').replace('</td>', ''))
+                pfFilteredData = []
+                if len(item['pfHeaders']) % 4 == 0:
+                    arrlen = 4
+                    for i in range(len(pfRawData) // 4):
+                        temp = list()
+                        temp.extend(essentials)
+                        temp.extend(pfRawData[i * 4 :(i + 1) * 4])
+                        pfFilteredData.append(temp)
+
+                elif len(item['pfHeaders']) % 6 == 0:
+                    arrlen = 6
+                    for i in range(len(pfRawData) // 6):
+                        temp = list()
+                        temp.extend(essentials)
+                        temp.extend(pfRawData[i * 6 :(i + 1) * 6])
+                        pfFilteredData.append(temp)
         
         # Remove empty rows
         # toRemove = []
@@ -130,7 +138,7 @@ class ProGenPipeline():
         #     pfFilteredData.remove(pfFilteredData.index(items))
         
         # Add to table :)
-            self.store_pf(pfFilteredData, essentials)
+                self.store_pf(pfFilteredData, essentials, arrlen)
 
         # if cuttings table is present, pass proper param
 
@@ -231,18 +239,22 @@ class ProGenPipeline():
         else:
             DATABASE.conn.commit()
 
-    def store_pf(self, item, ess):
+    def store_pf(self, item, ess, arrlen):
         '''
         Store Perforation to table
         '''
         try:
-            args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
-            DATABASE.cur.execute("INSERT INTO Perforation VALUES " + args_str)
+            if arrlen == 4:
+                args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+                DATABASE.cur.execute("INSERT INTO Perforation VALUES " + args_str)
+            elif arrlen == 6:
+                args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+                DATABASE.cur.execute("INSERT INTO pf VALUES " + args_str)
         except Exception as e:
             DATABASE.conn.rollback()
             api, kid = ess
             sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
-            DATABASE.cur.execute(sql, (api, kid, str(e), "Perforation"))
+            DATABASE.cur.execute(sql, (api, kid, str(e), f"Perforation{arrlen}"))
             DATABASE.conn.commit()
         else:
             DATABASE.conn.commit()
