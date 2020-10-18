@@ -126,3 +126,7 @@ https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1046936239
 > Extra columns in perforation table
 
 https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayEng?f_kid=1046070165
+
+> Data missing should include?
+
+https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayEng?f_kid=1044596288
