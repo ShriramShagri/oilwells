@@ -202,8 +202,10 @@ class Crawler(scrapy.Spider):
             # Collect pf table and Send to Pipeline (Multiple css elector path might be present)
 
             # FATAL: CSS SELECTOR TO BE FIXED!!!
+            perforationHeaders = response.css('table:nth-child(13) th').extract()
             perforation_data = response.css("table:nth-child(13) tr+ tr td").extract()
 
+            self.items['pfHeaders'] = perforationHeaders
             self.items['pf'] = perforation_data
 
         # Collect IP table and Send to Pipeline (Multiple css elector path might be present)
