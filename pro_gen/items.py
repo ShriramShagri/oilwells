@@ -15,6 +15,7 @@ class ProGenItem(scrapy.Item):
     cutting = scrapy.Field()
     api = scrapy.Field()
     kid = scrapy.Field()
+    pfHeaders = scrapy.Field()
 
     def __str__(self):
         return ""
