@@ -10,6 +10,7 @@ CURRENTKID = ""
 CURRENTAPI = ''
 
 page = 1
+index = 0
 
 
 class Crawler(scrapy.Spider):
@@ -38,7 +39,7 @@ class Crawler(scrapy.Spider):
         '''
         This function is used to collect all links in the column per page and iterate through all of them
         '''
-        global page
+        global page, index
         wellColumn = response.css("tr~ tr+ tr a:nth-child(1)").xpath("@href").extract()
 
         # Itetrate Through All links per page
@@ -50,7 +51,13 @@ class Crawler(scrapy.Spider):
                                 callback=self.get_data)
             page += 1
             yield response.follow(
-                    f"https://chasm.kgs.ku.edu/ords/qualified.ogw5.SelectWells?f_t=&f_r=&ew=W&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY}&f_ws=ALL&f_api=&sort_by=&f_pg={page}",
+                    f"https://chasm.kgs.ku.edu/ords/qualified.ogw5.SelectWells?f_t=&f_r=&ew=W&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_ws=ALL&f_api=&sort_by=&f_pg={page}",
+                callback=self.start_scraping)
+        elif index < len(COUNTY) - 1: 
+            index += 1
+            page = 1
+            yield response.follow(
+                    f"https://chasm.kgs.ku.edu/ords/qualified.ogw5.SelectWells?f_t=&f_r=&ew=W&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_ws=ALL&f_api=&sort_by=&f_pg={page}",
                 callback=self.start_scraping)
 
     def get_data(self, response):
@@ -63,7 +70,7 @@ class Crawler(scrapy.Spider):
 
         global CURRENTKID, CURRENTAPI
         CURRENTKID, CURRENTAPI = '', ''
-        # Collect WH table and Send to Pipeline (Multiple css elector path might be present)
+        # Collect WH table and Send to Pipeline 
 
         well_data = response.css('hr+ table tr:nth-child(1) ::text').extract()
 
@@ -193,7 +200,6 @@ class Crawler(scrapy.Spider):
         if "Casing record" in headers:
             # Collect casing table and Send to Pipeline (Multiple css elector path might be present)
 
-            # FATAL: CSS SELECTOR TO BE FIXED!!!
             casing_data = response.css("table:nth-child(9) ::text").extract()
 
             self.items['casing'] = casing_data
@@ -201,7 +207,6 @@ class Crawler(scrapy.Spider):
         if "Perforation Record" in headers:
             # Collect pf table and Send to Pipeline (Multiple css elector path might be present)
 
-            # FATAL: CSS SELECTOR TO BE FIXED!!!
             perforationHeaders = response.css('table:nth-child(13) th').extract()
             perforation_data = response.css("table:nth-child(13) tr+ tr td").extract()
 
@@ -209,8 +214,6 @@ class Crawler(scrapy.Spider):
             self.items['pf'] = perforation_data
 
         # Collect IP table and Send to Pipeline (Multiple css elector path might be present)
-
-        # FATAL: CSS SELECTOR TO BE FIXED!!!
 
         initial_potential = response.css('table:nth-child(7) td ::text').extract()
 
