@@ -7,8 +7,6 @@
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
 from .constants import *
-import csv
-import os
 
 
 class ProGenPipeline():
@@ -108,6 +106,7 @@ class ProGenPipeline():
 
         # if perforation table is present, pass proper param
         if 'pf' in keysInItem:
+            arrlen = 0
             if len(item['pf']) > 2:
                 pfRawData = []
                 for i in item['pf']:
@@ -130,12 +129,12 @@ class ProGenPipeline():
                         pfFilteredData.append(temp)
         
         # Remove empty rows
-        # toRemove = []
-        # for row in pfFilteredData:
-        #     if row.count("") >= 3:
-        #         toRemove.append(row)
-        # for items in toRemove:
-        #     pfFilteredData.remove(pfFilteredData.index(items))
+                toRemove = []
+                for row in pfFilteredData:
+                    if row.count("") >= 3:
+                        toRemove.append(row)
+                for items in toRemove:
+                    pfFilteredData.remove(pfFilteredData.index(items))
         
         # Add to table :)
                 self.store_pf(pfFilteredData, essentials, arrlen)
