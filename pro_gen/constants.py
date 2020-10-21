@@ -21,10 +21,10 @@ class DB:
 DATABASE = DB()
 
 # Set file storage path
-STORAGE_PATH = os.getcwd()
+STORAGE_PATH = os.path.join(os.getcwd(), 'docs')
 
 # Add all county values to this tuple to be scraped
-COUNTY = 3
+COUNTY = (203,)
 
 # names of pdf to be downloaded
 
