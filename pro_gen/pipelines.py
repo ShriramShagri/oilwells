@@ -129,12 +129,14 @@ class ProGenPipeline():
                         pfFilteredData.append(temp)
         
         # Remove empty rows
-                toRemove = []
-                for row in pfFilteredData:
-                    if row.count("") >= 3:
-                        toRemove.append(row)
-                for items in toRemove:
-                    pfFilteredData.remove(pfFilteredData.index(items))
+                # if len(pfFilteredData) > 0:
+                #     toRemove = []
+                #     for row in pfFilteredData:
+                #         if row.count("") >= 3:
+                #             toRemove.append(row)
+                #     if len(toRemove) > 0:
+                #         for items in toRemove:
+                #             pfFilteredData.remove(pfFilteredData.index(items))
         
         # Add to table :)
                 self.store_pf(pfFilteredData, essentials, arrlen)
