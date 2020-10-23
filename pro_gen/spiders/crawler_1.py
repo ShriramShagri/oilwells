@@ -31,7 +31,7 @@ class Crawler(scrapy.Spider):
         return FormRequest.from_response(response, formdata={
             'ew': 'W',
             'f_st': '15',
-            'f_c': str(COUNTY),
+            'f_c': str(COUNTY[0]),
             'f_pg': str(page)
         }, callback=self.start_scraping)
 
@@ -40,7 +40,7 @@ class Crawler(scrapy.Spider):
         This function is used to collect all links in the column per page and iterate through all of them
         '''
         global page, index
-        wellColumn = response.css("tr~ tr+ tr a:nth-child(1)").xpath("@href").extract()
+        wellColumn = response.css("tr~ tr+ tr a:nth-child(1)::attr(href)").extract()
 
         # Itetrate Through All links per page
         self.logger.info('No. of links: %s', len(wellColumn))
@@ -115,25 +115,25 @@ class Crawler(scrapy.Spider):
 
             drillreportherf = response.css('tr:nth-child(3) a::attr(href)').extract()
             drillreport = response.css('tr:nth-child(3) a::text').extract()
-            if 'Digital Wellbore information for this horizontal well is available.' in drillreport:
-                tempdownloadlist.remove('Directional Drilling Report')
-                url = drillreportherf[
-                    drillreport.index('Digital Wellbore information for this horizontal well is available.')]
-                yield Request(
-                    url=response.urljoin(url),
-                    callback=self.save_file,
-                    meta={'filename': 'Directional Drilling Report' + "." + url.split('.')[-1],  'kid': CURRENTKID, 'api': CURRENTAPI}
-                )
+            # if 'Digital Wellbore information for this horizontal well is available.' in drillreport:
+            #     tempdownloadlist.remove('Directional Drilling Report')
+            #     url = drillreportherf[
+            #         drillreport.index('Digital Wellbore information for this horizontal well is available.')]
+            #     yield Request(
+            #         url=response.urljoin(url),
+            #         callback=self.save_file,
+            #         meta={'filename': 'Directional Drilling Report' + "." + url.split('.')[-1],  'kid': CURRENTKID, 'api': CURRENTAPI}
+            #     )
 
-            count = 0
-            for i in range(len(pdf)):
-                if pdf[i] in tempdownloadlist:
-                    count += 1
-                    yield Request(
-                        url=response.urljoin(pdfherf[i]),
-                        callback=self.save_file,
-                        meta={'filename': pdf[i] + str(count) + "." + pdfherf[i].split('.')[-1],  'kid': CURRENTKID, 'api': CURRENTAPI}
-                    )
+            # count = 0
+            # for i in range(len(pdf)):
+            #     if pdf[i] in tempdownloadlist:
+            #         count += 1
+            #         yield Request(
+            #             url=response.urljoin(pdfherf[i]),
+            #             callback=self.save_file,
+            #             meta={'filename': pdf[i] + str(count) + "." + pdfherf[i].split('.')[-1],  'kid': CURRENTKID, 'api': CURRENTAPI}
+            #         )
 
         # Check for oil Production page. If so redirect and initiate .txt file Download
 
@@ -244,15 +244,15 @@ class Crawler(scrapy.Spider):
             cuttinghref = response.css('b+ ul a::attr(href)').extract()
             cutting = response.css('b+ ul a::text').extract()
 
-            count = 0
-            for i in range(len(cutting)):
-                if cutting[i] in TODOWNLOAD:
-                    count += 1
-                    yield Request(
-                        url=response.urljoin(cuttinghref[i]),
-                        callback=self.save_file,
-                        meta={'filename': cutting[i] + str(count) + cuttinghref[i].split('.')[-1], 'kid': CURRENTKID, 'api': CURRENTAPI}
-                    )
+            # count = 0
+            # for i in range(len(cutting)):
+            #     if cutting[i] in TODOWNLOAD:
+            #         count += 1
+            #         yield Request(
+            #             url=response.urljoin(cuttinghref[i]),
+            #             callback=self.save_file,
+            #             meta={'filename': cutting[i] + str(count) + cuttinghref[i].split('.')[-1], 'kid': CURRENTKID, 'api': CURRENTAPI}
+            #         )
 
         # Check for oil Production page. If so redirect and initiate .txt file Download
 
@@ -383,17 +383,17 @@ class Crawler(scrapy.Spider):
         api = response.meta.get('api')
 
         # Setup appropriate path and create directory
-        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY))):
-            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY)))
+        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY[index]))):
+            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY[index])))
         if len(api) > 4:
             pass
         else:
             api = 'NOAPI'
 
-        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY), kid+'_'+api)):
-            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY), kid+'_'+api))
+        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid+'_'+api)):
+            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid+'_'+api))
 
-        path = os.path.join(STORAGE_PATH, str(COUNTY), kid+'_'+api, filename)
+        path = os.path.join(STORAGE_PATH, str(COUNTY[index]), kid+'_'+api, filename)
 
         # Save the file
 
@@ -419,14 +419,14 @@ class Crawler(scrapy.Spider):
 
         # Setup appropriate path and create directory
 
-        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY))):
-            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY)))
+        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY[index]))):
+            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY[index])))
 
-        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY), kid+'_'+api)):
-            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY), kid+'_'+api))
+        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid+'_'+api)):
+            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid+'_'+api))
 
-        path = os.path.join(STORAGE_PATH, str(COUNTY), kid+'_'+api, filename)
-        dirpath = os.path.join(STORAGE_PATH, str(COUNTY), kid+'_'+api)
+        path = os.path.join(STORAGE_PATH, str(COUNTY[index]), kid+'_'+api, filename)
+        dirpath = os.path.join(STORAGE_PATH, str(COUNTY[index]), kid+'_'+api)
 
         self.logger.info('Saving txt %s', path)
 
