@@ -115,25 +115,25 @@ class Crawler(scrapy.Spider):
 
             drillreportherf = response.css('tr:nth-child(3) a::attr(href)').extract()
             drillreport = response.css('tr:nth-child(3) a::text').extract()
-            # if 'Digital Wellbore information for this horizontal well is available.' in drillreport:
-            #     tempdownloadlist.remove('Directional Drilling Report')
-            #     url = drillreportherf[
-            #         drillreport.index('Digital Wellbore information for this horizontal well is available.')]
-            #     yield Request(
-            #         url=response.urljoin(url),
-            #         callback=self.save_file,
-            #         meta={'filename': 'Directional Drilling Report' + "." + url.split('.')[-1],  'kid': CURRENTKID, 'api': CURRENTAPI}
-            #     )
+            if 'Digital Wellbore information for this horizontal well is available.' in drillreport:
+                tempdownloadlist.remove('Directional Drilling Report')
+                url = drillreportherf[
+                    drillreport.index('Digital Wellbore information for this horizontal well is available.')]
+                yield Request(
+                    url=response.urljoin(url),
+                    callback=self.save_file,
+                    meta={'filename': 'Directional Drilling Report' + CURRENTKID + CURRENTAPI + "." + url.split('.')[-1],  'kid': CURRENTKID, 'api': CURRENTAPI}
+                )
 
-            # count = 0
-            # for i in range(len(pdf)):
-            #     if pdf[i] in tempdownloadlist:
-            #         count += 1
-            #         yield Request(
-            #             url=response.urljoin(pdfherf[i]),
-            #             callback=self.save_file,
-            #             meta={'filename': pdf[i] + str(count) + "." + pdfherf[i].split('.')[-1],  'kid': CURRENTKID, 'api': CURRENTAPI}
-            #         )
+            count = 0
+            for i in range(len(pdf)):
+                if pdf[i] in tempdownloadlist:
+                    count += 1
+                    yield Request(
+                        url=response.urljoin(pdfherf[i]),
+                        callback=self.save_file,
+                        meta={'filename': pdf[i] + str(count) + CURRENTKID + CURRENTAPI +"." + pdfherf[i].split('.')[-1],  'kid': CURRENTKID, 'api': CURRENTAPI}
+                    )
 
         # Check for oil Production page. If so redirect and initiate .txt file Download
 
@@ -244,15 +244,15 @@ class Crawler(scrapy.Spider):
             cuttinghref = response.css('b+ ul a::attr(href)').extract()
             cutting = response.css('b+ ul a::text').extract()
 
-            # count = 0
-            # for i in range(len(cutting)):
-            #     if cutting[i] in TODOWNLOAD:
-            #         count += 1
-            #         yield Request(
-            #             url=response.urljoin(cuttinghref[i]),
-            #             callback=self.save_file,
-            #             meta={'filename': cutting[i] + str(count) + cuttinghref[i].split('.')[-1], 'kid': CURRENTKID, 'api': CURRENTAPI}
-            #         )
+            count = 0
+            for i in range(len(cutting)):
+                if cutting[i] in TODOWNLOAD:
+                    count += 1
+                    yield Request(
+                        url=response.urljoin(cuttinghref[i]),
+                        callback=self.save_file,
+                        meta={'filename': cutting[i] + str(count)  + CURRENTKID + CURRENTAPI + cuttinghref[i].split('.')[-1], 'kid': CURRENTKID, 'api': CURRENTAPI}
+                    )
 
         # Check for oil Production page. If so redirect and initiate .txt file Download
 
@@ -369,7 +369,7 @@ class Crawler(scrapy.Spider):
             yield Request(
                 url=response.urljoin(oil_data_href[-1]),
                 callback=self.save_oil_data,
-                meta={'filename': "oil_production.txt", 'kid': ckid, 'api': capi}
+                meta={'filename': f"oil_production_{ckid}_{capi}.txt", 'kid': ckid, 'api': capi}
             )
 
     def save_file(self, response):
