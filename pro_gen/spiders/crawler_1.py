@@ -50,12 +50,13 @@ class Crawler(scrapy.Spider):
             yield response.follow(
                     f"https://chasm.kgs.ku.edu/ords/qualified.ogw5.SelectWells?f_t=&f_r=&ew=W&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_ws=ALL&f_api=&sort_by=&f_pg={page}",
                 callback=self.start_scraping)
-        elif index < len(COUNTY) - 1: 
+        elif index < len(COUNTY) - 1:
             index += 1
             page = 1
             yield response.follow(
                     f"https://chasm.kgs.ku.edu/ords/qualified.ogw5.SelectWells?f_t=&f_r=&ew=W&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_ws=ALL&f_api=&sort_by=&f_pg={page}",
                 callback=self.start_scraping)
+
 
     def get_data(self, response):
 
@@ -67,7 +68,7 @@ class Crawler(scrapy.Spider):
 
         # global CURRENTKID, CURRENTAPI
         CURRENTKID, CURRENTAPI = '', ''
-        # Collect WH table and Send to Pipeline 
+        # Collect WH table and Send to Pipeline
 
         well_data = response.css('hr+ table tr:nth-child(1) ::text').extract()
 
@@ -79,7 +80,7 @@ class Crawler(scrapy.Spider):
             # Set KID for current link
             CURRENTAPI = well_data[well_data.index('API: ') + 1].replace("\n", "")
             CURRENTKID = well_data[well_data.index('KID: ') + 1].replace("\n", "")
-        elif 'API: ' in well_data2  or 'KID: ' in well_data2:
+        elif 'API: ' in well_data2 or 'KID: ' in well_data2:
             self.items['wh'] = well_data2
             # Set KID for current link
             CURRENTAPI = well_data2[well_data2.index('API: ') + 1].replace("\n", "")
@@ -119,7 +120,9 @@ class Crawler(scrapy.Spider):
                 yield Request(
                     url=response.urljoin(url),
                     callback=self.save_file,
-                    meta={'filename': 'Directional Drilling Report' + CURRENTKID + CURRENTAPI + "." + url.split('.')[-1],  'kid': CURRENTKID, 'api': CURRENTAPI}
+                    meta={
+                        'filename': 'Directional Drilling Report' + CURRENTKID + CURRENTAPI + "." + url.split('.')[-1],
+                        'kid': CURRENTKID, 'api': CURRENTAPI}
                 )
 
             count = 0
@@ -129,7 +132,9 @@ class Crawler(scrapy.Spider):
                     yield Request(
                         url=response.urljoin(pdfherf[i]),
                         callback=self.save_file,
-                        meta={'filename': pdf[i] + str(count) + CURRENTKID + CURRENTAPI +"." + pdfherf[i].split('.')[-1],  'kid': CURRENTKID, 'api': CURRENTAPI}
+                        meta={
+                            'filename': pdf[i] + str(count) + CURRENTKID + CURRENTAPI + "." + pdfherf[i].split('.')[-1],
+                            'kid': CURRENTKID, 'api': CURRENTAPI}
                     )
 
         # Check for oil Production page. If so redirect and initiate .txt file Download
@@ -163,11 +168,13 @@ class Crawler(scrapy.Spider):
 
                 topspage = response.css(f'table:nth-child({(headers.index("Tops Data") + 1) * 2}) td::text').extract()
                 self.topsSegregation(topspage, CURRENTKID, CURRENTAPI)
-        
+
         # If DST Scans Available...
         if "DST Data" in headers:
             dst = response.css('td td a::text').extract()
             dstlink = response.css('td td a').xpath("@href").extract()
+
+            # print(dst, dstlink)
 
             if "Scans" in dst and "Available" in dst:
                 yield response.follow(
@@ -183,12 +190,11 @@ class Crawler(scrapy.Spider):
 
         # Change function if Engineering Data Page is found
         yield self.items
-        
+
         if toggleEngineeringText:
             if toggleEngineeringText[0] == "View Engineering Data" and toggleEngineering:
-                yield response.follow(toggleEngineering[0], callback=self.get_tables, meta={'api': CURRENTAPI, 'kid': CURRENTKID})
-            
-            
+                yield response.follow(toggleEngineering[0], callback=self.get_tables,
+                                      meta={'api': CURRENTAPI, 'kid': CURRENTKID})
 
     def get_tables(self, response):
         '''
@@ -260,7 +266,8 @@ class Crawler(scrapy.Spider):
                     yield Request(
                         url=response.urljoin(cuttinghref[i]),
                         callback=self.save_file,
-                        meta={'filename': cutting[i] + str(count)  + CURRENTKID + CURRENTAPI + cuttinghref[i].split('.')[-1], 'kid': CURRENTKID, 'api': CURRENTAPI}
+                        meta={'filename': cutting[i] + str(count) + CURRENTKID + CURRENTAPI + cuttinghref[i].split('.')[
+                            -1], 'kid': CURRENTKID, 'api': CURRENTAPI}
                     )
 
         # Check for oil Production page. If so redirect and initiate .txt file Download
@@ -294,7 +301,7 @@ class Crawler(scrapy.Spider):
 
                 topspage = response.css(f'table:nth-child({(headers.index("Tops Data") + 1) * 2}) td::text').extract()
                 self.topsSegregation(topspage, CURRENTKID, CURRENTAPI)
-            
+
         # Check for DST scans...
         if "DST Data" in headers:
             dst = response.css('td td a::text').extract()
@@ -307,20 +314,20 @@ class Crawler(scrapy.Spider):
                     meta={'kid': CURRENTKID, 'api': CURRENTAPI})
 
         yield self.items
-    
+
     def getScans(self, response):
         kid = response.meta.get('kid')
         api = response.meta.get('api')
 
-        links = response.css('tr+ tr td::attr(href)').extract()
+        links = response.css('a::attr(href)').extract()
 
         for i in links:
             if i.split('.')[-1] in DST_Extensions:
                 yield Request(
-                        url=i,
-                        callback=self.save_file,
-                        meta={'filename': "DSTReport"  + kid + api + i.split('.')[-1], 'kid': kid, 'api': api}
-                    )
+                    url=response.urljoin(i),
+                    callback=self.save_file,
+                    meta={'filename': "DSTReport" + kid + api + "." + i.split('.')[-1], 'kid': kid, 'api': api}
+                )
 
     def gettopspage(self, response):
         '''
@@ -424,10 +431,10 @@ class Crawler(scrapy.Spider):
         else:
             api = 'NOAPI'
 
-        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid+'_'+api)):
-            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid+'_'+api))
+        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid + '_' + api)):
+            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid + '_' + api))
 
-        path = os.path.join(STORAGE_PATH, str(COUNTY[index]), kid+'_'+api, filename)
+        path = os.path.join(STORAGE_PATH, str(COUNTY[index]), kid + '_' + api, filename)
 
         # Save the file
 
@@ -456,11 +463,11 @@ class Crawler(scrapy.Spider):
         if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY[index]))):
             os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY[index])))
 
-        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid+'_'+api)):
-            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid+'_'+api))
+        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid + '_' + api)):
+            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid + '_' + api))
 
-        path = os.path.join(STORAGE_PATH, str(COUNTY[index]), kid+'_'+api, filename)
-        dirpath = os.path.join(STORAGE_PATH, str(COUNTY[index]), kid+'_'+api)
+        path = os.path.join(STORAGE_PATH, str(COUNTY[index]), kid + '_' + api, filename)
+        dirpath = os.path.join(STORAGE_PATH, str(COUNTY[index]), kid + '_' + api)
 
         self.logger.info('Saving txt %s', path)
 
