@@ -28,7 +28,7 @@ COUNTY = (203,)
 
 # names of pdf to be downloaded
 
-TODOWNLOAD = ('Intent To Drill Well', 'Well Completion Report', 'Drill Stem Test', 'DST Report', 'Directional Drilling Report')
+TODOWNLOAD = ('Intent To Drill Well', 'Well Completion Report', 'Drill Stem Test', 'DST Report', 'Directional Drilling Report', 'Well Map', 'Download scan(s) (ZIP archive of TIF images)')
 
 # Columns for ip table to be stored(Change db columns if added or removed any)
 
@@ -43,6 +43,7 @@ WHCOLUMS = ('API: ', 'KID: ', 'Lease:', 'Well:', 'Original operator:', 'Current 
             'Status: ', 'Total Depth: ', 'Elevation: ', 'Producing Formation: ', 'IP Oil (bbl): ', 'IP Water (bbl): ', 'IP GAS (MCF): ', 'KDOR code for Oil:', 
             'KCC Permit No.: ', "THIS SHOULD BE THERE")
 
+DST_Extensions = ('zip', 'pdf')
 
 # crawler name
 CRAWLER_NAME = 'genx'
