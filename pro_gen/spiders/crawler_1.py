@@ -3,11 +3,7 @@ from scrapy.http import FormRequest, Request
 from ..items import ProGenItem
 from ..constants import *
 import os
-import csv
 from dateutil.parser import parse
-
-CURRENTKID = ""
-CURRENTAPI = ''
 
 page = 1
 index = 0
@@ -20,6 +16,7 @@ class Crawler(scrapy.Spider):
         'http://www.kgs.ku.edu/Magellan/Qualified/index.html'
     ]
 
+    # REPLACE self.start_scrapping BY parse METHOD!!!
     def parse(self, response):
         '''
         Overrided function " Let's Start Scraping!!"
@@ -68,7 +65,7 @@ class Crawler(scrapy.Spider):
         self.items = ProGenItem()
         # Use KID of current link for file and folder names
 
-        global CURRENTKID, CURRENTAPI
+        # global CURRENTKID, CURRENTAPI
         CURRENTKID, CURRENTAPI = '', ''
         # Collect WH table and Send to Pipeline 
 
@@ -110,8 +107,8 @@ class Crawler(scrapy.Spider):
 
         if "ACO-1 and Driller's Logs" in headers:
             tempdownloadlist = list(TODOWNLOAD)
-            pdfherf = response.css('b+ ul a::attr(href)').extract()
-            pdf = response.css('b+ ul a::text').extract()
+            pdfherf = response.css('li a::attr(href)').extract()
+            pdf = response.css('li a::text').extract()
 
             drillreportherf = response.css('tr:nth-child(3) a::attr(href)').extract()
             drillreport = response.css('tr:nth-child(3) a::text').extract()
@@ -166,6 +163,17 @@ class Crawler(scrapy.Spider):
 
                 topspage = response.css(f'table:nth-child({(headers.index("Tops Data") + 1) * 2}) td::text').extract()
                 self.topsSegregation(topspage, CURRENTKID, CURRENTAPI)
+        
+        # If DST Scans Available...
+        if "DST Data" in headers:
+            dst = response.css('td td a::text').extract()
+            dstlink = response.css('td td a').xpath("@href").extract()
+
+            if "Scans" in dst and "Available" in dst:
+                yield response.follow(
+                    dstlink[dst.index("Scans")],
+                    callback=self.getScans,
+                    meta={'kid': CURRENTKID, 'api': CURRENTAPI})
 
         # Check if Engineering Data Page is present
 
@@ -187,7 +195,8 @@ class Crawler(scrapy.Spider):
         This function is used to Data from engineering page
         '''
         self.items = ProGenItem()
-        global CURRENTKID, CURRENTAPI
+        # global CURRENTKID, CURRENTAPI
+        CURRENTKID, CURRENTAPI = '', ''
         CURRENTKID, kid = response.meta.get('kid'), response.meta.get('kid')
         CURRENTAPI, api = response.meta.get('api'), response.meta.get('api')
         self.logger.info('Switched to Engineering Data: KID= %s', CURRENTKID)
@@ -241,8 +250,8 @@ class Crawler(scrapy.Spider):
         # Check for all pdfs present and download. To manage all the pdfs that get downloaded, goto constants.py file
 
         if "ACO-1 and Driller's Logs" in headers:
-            cuttinghref = response.css('b+ ul a::attr(href)').extract()
-            cutting = response.css('b+ ul a::text').extract()
+            cuttinghref = response.css('li a::attr(href)').extract()
+            cutting = response.css('li a::text').extract()
 
             count = 0
             for i in range(len(cutting)):
@@ -285,8 +294,33 @@ class Crawler(scrapy.Spider):
 
                 topspage = response.css(f'table:nth-child({(headers.index("Tops Data") + 1) * 2}) td::text').extract()
                 self.topsSegregation(topspage, CURRENTKID, CURRENTAPI)
+            
+        # Check for DST scans...
+        if "DST Data" in headers:
+            dst = response.css('td td a::text').extract()
+            dstlink = response.css('td td a').xpath("@href").extract()
+
+            if "Scans" in dst and "Available" in dst:
+                yield response.follow(
+                    dstlink[dst.index("Scans")],
+                    callback=self.getScans,
+                    meta={'kid': CURRENTKID, 'api': CURRENTAPI})
 
         yield self.items
+    
+    def getScans(self, response):
+        kid = response.meta.get('kid')
+        api = response.meta.get('api')
+
+        links = response.css('tr+ tr td::attr(href)').extract()
+
+        for i in links:
+            if i.split('.')[-1] in DST_Extensions:
+                yield Request(
+                        url=i,
+                        callback=self.save_file,
+                        meta={'filename': "DSTReport"  + kid + api + i.split('.')[-1], 'kid': kid, 'api': api}
+                    )
 
     def gettopspage(self, response):
         '''
