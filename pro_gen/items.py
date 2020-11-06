@@ -19,3 +19,10 @@ class ProGenItem(scrapy.Item):
 
     def __str__(self):
         return ""
+    
+class DSTItem(scrapy.Item):
+    # define the fields for your item here like:
+    table = scrapy.Field()
+
+    def __str__(self):
+        return ""

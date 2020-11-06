@@ -8,6 +8,16 @@
 from itemadapter import ItemAdapter
 from .constants import *
 
+class DSTPipeline():
+    '''
+    Handle Data Like Pro
+    '''
+    def process_item(self, item, spider):
+        '''
+        Check for all the data sent and handle them with care 
+        '''
+        # Update DST table by extracting data from html
+        pass
 
 class ProGenPipeline():
     '''
