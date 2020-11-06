@@ -1,5 +1,6 @@
 import scrapy
 from scrapy.http import FormRequest, Request
+from ..items import DSTItem
 from ..constants import *
 
 page = 1
@@ -62,13 +63,14 @@ class Crawler(scrapy.Spider):
                 callback=self.start_scraping)
 
     def getDST(self, response):
-        self.logger.info('Found dst Table')
-        pass
+        self.items = DSTItem()
+        self.items['table'] = response.css('table+ table').extract()
+        yield self.items
 
     def getPDF(self, response):
         kid = response.meta.get('kid')
 
-        filelinks = response.css('li a::attr(href)')
+        filelinks = response.css('li a::attr(href)').extract()
 
         f = lambda x : True if x.split('.')[-1] in DST_Extensions else False
 
