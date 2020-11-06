@@ -46,4 +46,7 @@ WHCOLUMS = ('API: ', 'KID: ', 'Lease:', 'Well:', 'Original operator:', 'Current 
 DST_Extensions = ('zip', 'pdf')
 
 # crawler name
-CRAWLER_NAME = 'genx'
+CRAWLER_NAME = {
+    'main': 'genx',
+    'dst' : 'genz'
+}

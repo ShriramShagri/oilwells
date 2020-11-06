@@ -10,7 +10,7 @@ index = 0
 
 
 class Crawler(scrapy.Spider):
-    name = CRAWLER_NAME
+    name = CRAWLER_NAME['main']
     # Start Url
     start_urls = [
         'http://www.kgs.ku.edu/Magellan/Qualified/index.html'
