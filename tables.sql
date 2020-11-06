@@ -139,3 +139,34 @@ CREATE TABLE pf(
    bridge_plug_set_at TEXT,
    Material_Record TEXT
 );
+
+DROP TABLE IF EXISTS pf;
+CREATE TABLE dst(
+   Test_number TEXT,
+   Interval TEXT,
+   formation_tested TEXT,
+   Initial_Hydro_Pressure TEXT,
+   First_Initial_Flow_Pressure TEXT,
+   First_Final_Flow_Pressure TEXT,
+   Initial_Shut_in_Pressure TEXT,
+   Second_Initial_Flow_Pressure TEXT,
+   Second_Final_Flow_Pressure TEXT,
+   Final_Shut_in_Pressure TEXT,
+   Final_Hydro_Pressure TEXT,
+   Data_Source TEXT,
+   Date_Time TEXT,
+   Hole_Size TEXT,
+   Drill_Collar_ID TEXT,
+   Drill_Pipe_ID TEXT,
+   Drill_Collar_Length TEXT,
+   Drill_Pipe_Length TEXT,
+   Initial_Flow TEXT,
+   Final_Flow TEXT,
+   Final_Shut_In TEXT,
+   Bottom_Hole_Temperature TEXT,
+   Percent_Porosity TEXT,
+   Samples TEXT,
+   Gas Recovery TEXT,
+   Comments TEXT,
+   Recovery TEXT
+);
