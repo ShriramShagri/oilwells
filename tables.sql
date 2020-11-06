@@ -140,7 +140,8 @@ CREATE TABLE pf(
    Material_Record TEXT
 );
 
-DROP TABLE IF EXISTS pf;
+-- Change Order if required
+DROP TABLE IF EXISTS dst;
 CREATE TABLE dst(
    Test_number TEXT,
    Interval TEXT,
