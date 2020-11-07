@@ -77,7 +77,17 @@ class Crawler(scrapy.Spider):
         # Downloads
         downloadLinks = response.css('tr+ tr a::attr(href)').extract()
         downloadLinkText =  response.css('tr+ tr a::text').extract()
-        print(downloadLinks, downloadLinkText)
+        for index, text in enumerate(downloadLinkText):
+            if text == 'Download original data':
+                l = downloadLinks[index]
+            #     yield Request(
+            #     url=response.urljoin(),
+            #     callback=self.save_file,
+            #     meta={
+            #         'kid': kid, 'filename' : l.split('/')[-1]}
+            # )
+                print(text, l)
+
         yield self.items
 
     def getPDF(self, response):
@@ -90,7 +100,7 @@ class Crawler(scrapy.Spider):
         filteredLinks = filter(f, filelinks)
 
         for l in filteredLinks:
-             yield Request(
+            yield Request(
                 url=response.urljoin(l),
                 callback=self.save_file,
                 meta={
