@@ -16,8 +16,75 @@ class DSTPipeline():
         '''
         Check for all the data sent and handle them with care 
         '''
-        # Update DST table by extracting data from html
-        pass
+        crudeData = []
+        cleanData = []
+        for i in range(len(item['table'])// 13):
+            crudeData.append(item['table'][i*13:(i+1)*13])
+        
+        for html in crudeData:
+            temparr = [item['kid'],]
+            # TestNumber
+            temparr.append(html[0].replace('\n', '').replace('</td>', '').replace('<td width="50%"><b>Test Number:</b> ', ''))
+            # Data Source
+            temparr.append(html[1].replace('\n', '').replace('</td>', '').replace('<td width="50%"><b>Data Source:</b> ', ''))
+            # Interval, FormationTested
+            temp = html[2].replace('\n', '').replace('</td>', '').split('<br>')
+            temparr.append(temp[0].replace('<td>Interval: ', ''))
+            temparr.append(temp[1].replace('Formation tested: ', ''))
+            # Datetime
+            temparr.append(html[3].replace('\n', '').replace('</td>', '').replace('<td>Date, Time: ', ''))
+            # Main data set 1
+            temp = html[4].replace('\n', '').replace('</td>', '').split('<br>')
+            extracted = []
+            for crude, junk in zip(temp, MAIN_SET1):
+                extracted.append(crude.replace(junk, ''))
+            temparr.extend(extracted)
+
+            # Tool Data
+            temp = html[5].replace('\n', '').replace('</td>', '').split('<br>')
+            temp.pop(0)
+            extracted = []
+            for crude, junk in zip(temp, MAIN_SET2):
+                extracted.append(crude.replace(junk, ''))
+            temparr.extend(extracted)
+
+            # Initial Flow
+            temp = html[6].replace('\n', '').replace('</td>', '').split('<br>')
+            extracted = []
+            for crude, junk in zip(temp, MAIN_SET3):
+                extracted.append(crude.replace(junk, ''))
+            temparr.extend(extracted)
+
+            # Bottom Hole Temperature
+            temp = html[7].replace('\n', '').replace('</td>', '').split('<br>')
+            extracted = []
+            for crude, junk in zip(temp, MAIN_SET4):
+                extracted.append(crude.replace(junk, ''))
+            temparr.extend(extracted)
+
+            # Recovery
+            temparr.append(';'.join(list(filter(None, html[8].replace('\n', '').replace('</td>', '').replace('<td colspan="2"><b>Recovery</b><br>', '').split('<br>')))))
+            cleanData.append(temparr)
+        
+        self.store_dst(cleanData, item['kid'])
+
+        return item
+      
+    def store_dst(self, item, kid):
+        '''
+        Store casing to table
+        '''
+        try:
+            args_str = b','.join(
+                DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+            DATABASE.cur.execute("INSERT INTO casing VALUES " + args_str)
+        except Exception as e:
+            DATABASE.conn.rollback()
+            sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
+            DATABASE.cur.execute(sql, ('', kid, str(e), "dst"))
+            DATABASE.conn.commit()
+        else:
+            DATABASE.conn.commit()
 
 class ProGenPipeline():
     '''

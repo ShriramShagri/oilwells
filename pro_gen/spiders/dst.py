@@ -62,9 +62,31 @@ class Crawler(scrapy.Spider):
                     f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page}",
                 callback=self.start_scraping)
 
+        # yield response.follow('https://chasm.kgs.ku.edu/ords/dst.dst2.DisplayDST?f_kid=1006170157',
+        #         callback=self.getDST,
+        #         meta={'kid': '1006170161' })
+
     def getDST(self, response):
+        kid = response.meta.get('kid')
         self.items = DSTItem()
-        self.items['table'] = response.css('table+ table').extract()
+        self.items['kid'] = kid
+        
+        # Table Data
+        self.items['table'] = response.css('table+ table td').extract()
+
+        # Downloads
+        downloadLinks = response.css('tr+ tr a::attr(href)').extract()
+        downloadLinkText =  response.css('tr+ tr a::text').extract()
+        for index, text in enumerate(downloadLinkText):
+            if text == 'Download original data':
+                l = downloadLinks[index]
+                yield Request(
+                url=response.urljoin(),
+                callback=self.save_file,
+                meta={
+                    'kid': kid, 'filename' : l.split('/')[-1]}
+            )
+
         yield self.items
 
     def getPDF(self, response):
@@ -77,7 +99,7 @@ class Crawler(scrapy.Spider):
         filteredLinks = filter(f, filelinks)
 
         for l in filteredLinks:
-             yield Request(
+            yield Request(
                 url=response.urljoin(l),
                 callback=self.save_file,
                 meta={
