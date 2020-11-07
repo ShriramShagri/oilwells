@@ -66,12 +66,6 @@ MAIN_SET2 = (
     'Drill Pipe Length: ', 
 )
 
-MAIN_SET3 = (
-    '<td colspan="2">Initial Flow: ',
-    'Final Flow: ',
-    'Final Shut In: '
-)
-
 MAIN_SET4 = (
     '<td colspan="2">Bottom Hole Temperature: ',
     'Percent Porosity: ',
@@ -82,6 +76,6 @@ MAIN_SET4 = (
 
 # crawler name
 CRAWLER_NAME = {
-    'main': 'genx',
-    'dst' : 'genz'
+    'main': 'wells',
+    'dst' : 'dst'
 }
