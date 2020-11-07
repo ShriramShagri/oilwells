@@ -16,13 +16,57 @@ class DSTPipeline():
         '''
         Check for all the data sent and handle them with care 
         '''
-        # Update DST table by extracting data from html
-        # Get the order of the data present in the list and extract accordingly
-        # All data in a single table so either incorporate the same idea used for the wh table or brew something on my own
-        # Since the data is credu, replace and extract would work..only thing is dont replace br tags and replace before storing to the database
-        # Split at every testnumber and the list should be fine
-        # Try using single pipeline if it doesn't work then switch to multiple pipelines
-        print(item['table'])
+        crudeData = []
+        cleanData = []
+        for i in range(len(item['table'])// 13):
+            crudeData.append(item['table'][i*13:(i+1)*13])
+        
+        for html in crudeData:
+            temparr = []
+            # TestNumber
+            temparr.append(html[0].replace('\n', '').replace('</td>', '').replace('<td width="50%"><b>Test Number:</b> ', ''))
+            # Data Source
+            temparr.append(html[1].replace('\n', '').replace('</td>', '').replace('<td width="50%"><b>Data Source:</b> ', ''))
+            # Interval, FormationTested
+            temp = html[2].replace('\n', '').replace('</td>', '').split('<br>')
+            temparr.append(temp[0].replace('<td>Interval: ', ''))
+            temparr.append(temp[1].replace('Formation tested: ', ''))
+            # Datetime
+            temparr.append(html[3].replace('\n', '').replace('</td>', '').replace('<td>Date, Time: ', ''))
+            # Main data set 1
+            temp = html[4].replace('\n', '').replace('</td>', '').split('<br>')
+            extracted = []
+            for crude, junk in zip(temp, MAIN_SET1):
+                extracted.append(crude.replace(junk, ''))
+            temparr.extend(extracted)
+
+            # Tool Data
+            temp = html[5].replace('\n', '').replace('</td>', '').split('<br>')
+            temp.pop(0)
+            extracted = []
+            for crude, junk in zip(temp, MAIN_SET2):
+                extracted.append(crude.replace(junk, ''))
+            temparr.extend(extracted)
+
+            # Initial Flow
+            temp = html[6].replace('\n', '').replace('</td>', '').split('<br>')
+            extracted = []
+            for crude, junk in zip(temp, MAIN_SET3):
+                extracted.append(crude.replace(junk, ''))
+            temparr.extend(extracted)
+
+            # Bottom Hole Temperature
+            temp = html[7].replace('\n', '').replace('</td>', '').split('<br>')
+            extracted = []
+            for crude, junk in zip(temp, MAIN_SET4):
+                extracted.append(crude.replace(junk, ''))
+            temparr.extend(extracted)
+
+            # Recovery
+            temparr.append(';'.join(list(filter(None, html[8].replace('\n', '').replace('</td>', '').replace('<td colspan="2"><b>Recovery</b><br>', '').split('<br>')))))
+            cleanData.append(temparr)
+        
+        print(cleanData)
         return item
 
 class ProGenPipeline():

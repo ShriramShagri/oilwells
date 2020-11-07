@@ -45,6 +45,41 @@ WHCOLUMS = ('API: ', 'KID: ', 'Lease:', 'Well:', 'Original operator:', 'Current 
 
 DST_Extensions = ('zip', 'pdf')
 
+# DST Table Cleaners:
+# Dont Change the below
+MAIN_SET1 = (
+    '<td><b>Initial Hydro Pressure</b>: ',
+    '<b>First Initial Flow Pressure</b>: ',
+    '<b>First Final Flow Pressure</b>: ',
+    '<b>Initial Shut-in Pressure</b>: ',
+    '<b>Second Initial Flow Pressure</b>: ',
+    '<b>Second Final Flow Pressure</b>: ',
+    '<b>Final Shut-in Pressure</b>: ',
+    '<b>Final Hydro Pressure</b>: '
+)
+
+MAIN_SET2 = (
+    'Hole Size: ',
+    'Drill Collar ID:  ',
+    'Drill Pipe ID: ',
+    'Drill Collar Length:  ',
+    'Drill Pipe Length: ', 
+)
+
+MAIN_SET3 = (
+    '<td colspan="2">Initial Flow: ',
+    'Final Flow: ',
+    'Final Shut In: '
+)
+
+MAIN_SET4 = (
+    '<td colspan="2">Bottom Hole Temperature: ',
+    'Percent Porosity: ',
+    'Samples: ',
+    'Gas Recovery: ',
+    'Comments: '
+)
+
 # crawler name
 CRAWLER_NAME = {
     'main': 'genx',
