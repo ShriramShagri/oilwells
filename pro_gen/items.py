@@ -23,6 +23,7 @@ class ProGenItem(scrapy.Item):
 class DSTItem(scrapy.Item):
     # define the fields for your item here like:
     table = scrapy.Field()
+    kid = scrapy.Field()
 
     def __str__(self):
         return ""

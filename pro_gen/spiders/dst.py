@@ -69,8 +69,15 @@ class Crawler(scrapy.Spider):
     def getDST(self, response):
         kid = response.meta.get('kid')
         self.items = DSTItem()
-        print(kid)
+        self.items['kid'] = kid
+        
+        # Table Data
         self.items['table'] = response.css('table+ table td').extract()
+
+        # Downloads
+        downloadLinks = response.css('tr+ tr a::attr(href)').extract()
+        downloadLinkText =  response.css('tr+ tr a::text').extract()
+        print(downloadLinks, downloadLinkText)
         yield self.items
 
     def getPDF(self, response):

@@ -22,7 +22,7 @@ class DSTPipeline():
             crudeData.append(item['table'][i*13:(i+1)*13])
         
         for html in crudeData:
-            temparr = []
+            temparr = [item['kid'],]
             # TestNumber
             temparr.append(html[0].replace('\n', '').replace('</td>', '').replace('<td width="50%"><b>Test Number:</b> ', ''))
             # Data Source
@@ -66,8 +66,26 @@ class DSTPipeline():
             temparr.append(';'.join(list(filter(None, html[8].replace('\n', '').replace('</td>', '').replace('<td colspan="2"><b>Recovery</b><br>', '').split('<br>')))))
             cleanData.append(temparr)
         
+        # self.store_dst(cleanData, item['kid'])
         print(cleanData)
+
         return item
+      
+    # def store_dst(self, item, kid):
+    #     '''
+    #     Store casing to table
+    #     '''
+    #     try:
+    #         args_str = b','.join(
+    #             DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+    #         DATABASE.cur.execute("INSERT INTO casing VALUES " + args_str)
+    #     except Exception as e:
+    #         DATABASE.conn.rollback()
+    #         sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
+    #         DATABASE.cur.execute(sql, ('', kid, str(e), "dst"))
+    #         DATABASE.conn.commit()
+    #     else:
+    #         DATABASE.conn.commit()
 
 class ProGenPipeline():
     '''
