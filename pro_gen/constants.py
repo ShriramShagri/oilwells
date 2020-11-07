@@ -1,24 +1,24 @@
-# import psycopg2
+import psycopg2
 import os
 
 # Database Class
 # Change the table values as you like
-# class DB:
-#     '''
-#     Connect to database here in constants.py so that db can be accessed inside spider too
-#     '''
-#     def __init__(self):
-#         self.conn = psycopg2.connect(
-#             host='localhost',
-#             database= 'oilwells',
-#             user= 'postgres',
-#             password= '123456'
-#         )
-#         self.cur = self.conn.cursor()
+class DB:
+    '''
+    Connect to database here in constants.py so that db can be accessed inside spider too
+    '''
+    def __init__(self):
+        self.conn = psycopg2.connect(
+            host='localhost',
+            database= 'oilwells',
+            user= 'postgres',
+            password= '123456'
+        )
+        self.cur = self.conn.cursor()
 
 # db object
 
-#DATABASE = DB()
+DATABASE = DB()
 
 # Set file storage path
 STORAGE_PATH = os.path.join(os.getcwd(), 'docs')
