@@ -162,13 +162,11 @@ CREATE TABLE dst(
    Drill_Pipe_ID TEXT,
    Drill_Collar_Length TEXT,
    Drill_Pipe_Length TEXT,
-   Initial_Flow TEXT,
-   Final_Flow TEXT,
-   Final_Shut_In TEXT,
+   Flow TEXT,
    Bottom_Hole_Temperature TEXT,
    Percent_Porosity TEXT,
    Samples TEXT,
-   Gas Recovery TEXT,
+   Gas_Recovery TEXT,
    Comments TEXT,
    Recovery TEXT
 );
