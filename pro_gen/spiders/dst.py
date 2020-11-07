@@ -29,7 +29,7 @@ class Crawler(scrapy.Spider):
             'f_c': str(COUNTY[0]),
             'f_pg': str(page)
         }, callback=self.start_scraping)
-    
+
     def start_scraping(self, response):
         '''
         This function is used to collect all links in the column per page and iterate through all of them
@@ -41,25 +41,25 @@ class Crawler(scrapy.Spider):
         self.logger.info('No. of links: %s', len(wellColumn))
         if len(wellColumn) > 1:
             for a in wellColumn:
-                if len(a)<80:
+                if len(a) < 80:
                     kid = a.split('=')[-1]
                     if 'DisplayDST' in a:
                         yield response.follow(a,
-                                    callback=self.getDST,
-                                    meta={'kid': kid })
-                    elif 'AcoLinks' in a:
-                        yield response.follow(a,
-                                    callback=self.getPDF,
-                                    meta={'kid': kid })
+                                              callback=self.getDST,
+                                              meta={'kid': kid})
+            #         elif 'AcoLinks' in a:
+            #             yield response.follow(a,
+            #                                   callback=self.getPDF,
+            #                                   meta={'kid': kid})
             page += 1
             yield response.follow(
-                    f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page}",
+                f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page}",
                 callback=self.start_scraping)
         elif index < len(COUNTY) - 1:
             index += 1
             page = 1
             yield response.follow(
-                    f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page}",
+                f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page}",
                 callback=self.start_scraping)
 
         # yield response.follow('https://chasm.kgs.ku.edu/ords/dst.dst2.DisplayDST?f_kid=1006170157',
@@ -70,22 +70,22 @@ class Crawler(scrapy.Spider):
         kid = response.meta.get('kid')
         self.items = DSTItem()
         self.items['kid'] = kid
-        
+
         # Table Data
         self.items['table'] = response.css('table+ table td').extract()
 
         # Downloads
         downloadLinks = response.css('tr+ tr a::attr(href)').extract()
-        downloadLinkText =  response.css('tr+ tr a::text').extract()
+        downloadLinkText = response.css('tr+ tr a::text').extract()
         for index, text in enumerate(downloadLinkText):
             if text == 'Download original data':
                 l = downloadLinks[index]
                 yield Request(
-                url=response.urljoin(),
-                callback=self.save_file,
-                meta={
-                    'kid': kid, 'filename' : l.split('/')[-1]}
-            )
+                    url=response.urljoin(l),
+                    callback=self.save_file,
+                    meta={
+                        'kid': kid, 'filename': l.split('/')[-1]}
+                )
 
         yield self.items
 
@@ -94,7 +94,7 @@ class Crawler(scrapy.Spider):
 
         filelinks = response.css('li a::attr(href)').extract()
 
-        f = lambda x : True if x.split('.')[-1] in DST_Extensions else False
+        f = lambda x: True if x.split('.')[-1] in DST_Extensions else False
 
         filteredLinks = filter(f, filelinks)
 
@@ -103,7 +103,7 @@ class Crawler(scrapy.Spider):
                 url=response.urljoin(l),
                 callback=self.save_file,
                 meta={
-                    'kid': kid, 'filename' : l.split('/')[-1]}
+                    'kid': kid, 'filename': l.split('/')[-1]}
             )
 
     def save_file(self, response):

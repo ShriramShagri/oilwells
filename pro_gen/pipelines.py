@@ -77,7 +77,7 @@ class DSTPipeline():
         try:
             args_str = b','.join(
                 DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
-            DATABASE.cur.execute("INSERT INTO casing VALUES " + args_str)
+            DATABASE.cur.execute("INSERT INTO dst VALUES " + args_str)
         except Exception as e:
             DATABASE.conn.rollback()
             sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
