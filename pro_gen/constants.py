@@ -60,9 +60,9 @@ MAIN_SET1 = (
 
 MAIN_SET2 = (
     'Hole Size: ',
-    'Drill Collar ID:  ',
+    'Drill Collar ID: ',
     'Drill Pipe ID: ',
-    'Drill Collar Length:  ',
+    'Drill Collar Length: ',
     'Drill Pipe Length: ', 
 )
 

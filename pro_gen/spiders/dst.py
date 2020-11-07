@@ -62,7 +62,7 @@ class Crawler(scrapy.Spider):
         #             f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page}",
         #         callback=self.start_scraping)
 
-        yield response.follow('https://chasm.kgs.ku.edu/ords/dst.dst2.DisplayDST?f_kid=1006170159',
+        yield response.follow('https://chasm.kgs.ku.edu/ords/dst.dst2.DisplayDST?f_kid=1006170157',
                 callback=self.getDST,
                 meta={'kid': '1006170161' })
 
