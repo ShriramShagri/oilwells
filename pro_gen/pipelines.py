@@ -49,11 +49,11 @@ class DSTPipeline():
             temparr.extend(extracted)
 
             # Initial Flow
-            temp = html[6].replace('\n', '').replace('</td>', '').split('<br>')
-            extracted = []
-            for crude, junk in zip(temp, MAIN_SET3):
-                extracted.append(crude.replace(junk, ''))
-            temparr.extend(extracted)
+            # temp = html[6].replace('\n', '').replace('<td colspan="2">','').replace('</td>', '').split('<br>')
+            # extracted = []
+            # for crude, junk in zip(temp, MAIN_SET3):
+            #     extracted.append(crude.replace(junk, ''))
+            temparr.append(';'.join(list(filter(None, html[6].replace('\n', '').replace('<td colspan="2">','').replace('</td>', '').split('<br>')))))
 
             # Bottom Hole Temperature
             temp = html[7].replace('\n', '').replace('</td>', '').split('<br>')
@@ -76,7 +76,7 @@ class DSTPipeline():
         '''
         try:
             args_str = b','.join(
-                DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+                DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
             DATABASE.cur.execute("INSERT INTO dst VALUES " + args_str)
         except Exception as e:
             DATABASE.conn.rollback()
