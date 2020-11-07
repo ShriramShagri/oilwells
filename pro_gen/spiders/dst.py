@@ -47,10 +47,10 @@ class Crawler(scrapy.Spider):
                         yield response.follow(a,
                                               callback=self.getDST,
                                               meta={'kid': kid})
-            #         elif 'AcoLinks' in a:
-            #             yield response.follow(a,
-            #                                   callback=self.getPDF,
-            #                                   meta={'kid': kid})
+                    elif 'AcoLinks' in a:
+                        yield response.follow(a,
+                                              callback=self.getPDF,
+                                              meta={'kid': kid})
             page += 1
             yield response.follow(
                 f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page}",

@@ -49,11 +49,11 @@ class DSTPipeline():
             temparr.extend(extracted)
 
             # Initial Flow
-            # temp = html[6].replace('\n', '').replace('<td colspan="2">','').replace('</td>', '').split('<br>')
-            # extracted = []
-            # for crude, junk in zip(temp, MAIN_SET3):
-            #     extracted.append(crude.replace(junk, ''))
-            temparr.append(';'.join(list(filter(None, html[6].replace('\n', '').replace('<td colspan="2">','').replace('</td>', '').split('<br>')))))
+            if 'Bottom Hole Temperature' in html[6]:
+                temparr.append('')
+                html.insert(6, '')
+            else:
+                temparr.append(';'.join(list(filter(None, html[6].replace('\n', '').replace('<td colspan="2">','').replace('</td>', '').split('<br>')))))
 
             # Bottom Hole Temperature
             temp = html[7].replace('\n', '').replace('</td>', '').split('<br>')
@@ -63,7 +63,10 @@ class DSTPipeline():
             temparr.extend(extracted)
 
             # Recovery
-            temparr.append(';'.join(list(filter(None, html[8].replace('\n', '').replace('</td>', '').replace('<td colspan="2"><b>Recovery</b><br>', '').split('<br>')))))
+            if 'Recovery' in html[8]:
+                temparr.append(';'.join(list(filter(None, html[8].replace('\n', '').replace('</td>', '').replace('<td colspan="2"><b>Recovery</b><br>', '').split('<br>')))))
+            else:
+                temparr.append('')
             cleanData.append(temparr)
         
         self.store_dst(cleanData, item['kid'])
