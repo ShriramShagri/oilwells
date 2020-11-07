@@ -17,6 +17,12 @@ class DSTPipeline():
         Check for all the data sent and handle them with care 
         '''
         # Update DST table by extracting data from html
+        # Get the order of the data present in the list and extract accordingly
+        # All data in a single table so either incorporate the same idea used for the wh table or brew something on my own
+        # Since the data is credu, replace and extract would work..only thing is dont replace br tags and replace before storing to the database
+        # Split at every testnumber and the list should be fine
+        # Try using single pipeline if it doesn't work then switch to multiple pipelines
+        print(len(item['table']))
         pass
 
 class ProGenPipeline():

@@ -39,28 +39,32 @@ class Crawler(scrapy.Spider):
 
         # Itetrate Through All links per page
         self.logger.info('No. of links: %s', len(wellColumn))
-        if len(wellColumn) > 1:
-            for a in wellColumn:
-                if len(a)<80:
-                    kid = a.split('=')[-1]
-                    if 'DisplayDST' in a:
-                        yield response.follow(a,
-                                    callback=self.getDST,
-                                    meta={'kid': kid })
-                    elif 'AcoLinks' in a:
-                        yield response.follow(a,
-                                    callback=self.getPDF,
-                                    meta={'kid': kid })
-            page += 1
-            yield response.follow(
-                    f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page}",
-                callback=self.start_scraping)
-        elif index < len(COUNTY) - 1:
-            index += 1
-            page = 1
-            yield response.follow(
-                    f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page}",
-                callback=self.start_scraping)
+        # if len(wellColumn) > 1:
+        #     for a in wellColumn:
+        #         if len(a)<80:
+        #             kid = a.split('=')[-1]
+        #             if 'DisplayDST' in a:
+        #                 yield response.follow(a,
+        #                             callback=self.getDST,
+        #                             meta={'kid': kid })
+        #             elif 'AcoLinks' in a:
+        #                 yield response.follow(a,
+        #                             callback=self.getPDF,
+        #                             meta={'kid': kid })
+        #     page += 1
+        #     yield response.follow(
+        #             f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page}",
+        #         callback=self.start_scraping)
+        # elif index < len(COUNTY) - 1:
+        #     index += 1
+        #     page = 1
+        #     yield response.follow(
+        #             f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page}",
+        #         callback=self.start_scraping)
+
+        yield response.follow('https://chasm.kgs.ku.edu/ords/dst.dst2.DisplayDST?f_kid=1006170161',
+                callback=self.getDST,
+                meta={'kid': '1006170161' })
 
     def getDST(self, response):
         self.items = DSTItem()
