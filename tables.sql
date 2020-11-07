@@ -143,9 +143,12 @@ CREATE TABLE pf(
 -- Change Order if required
 DROP TABLE IF EXISTS dst;
 CREATE TABLE dst(
+   kid TEXT,
    Test_number TEXT,
+   Data_Source TEXT,
    Interval TEXT,
    formation_tested TEXT,
+   Date_Time TEXT,
    Initial_Hydro_Pressure TEXT,
    First_Initial_Flow_Pressure TEXT,
    First_Final_Flow_Pressure TEXT,
@@ -154,8 +157,6 @@ CREATE TABLE dst(
    Second_Final_Flow_Pressure TEXT,
    Final_Shut_in_Pressure TEXT,
    Final_Hydro_Pressure TEXT,
-   Data_Source TEXT,
-   Date_Time TEXT,
    Hole_Size TEXT,
    Drill_Collar_ID TEXT,
    Drill_Pipe_ID TEXT,
