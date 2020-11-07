@@ -24,5 +24,5 @@ class DSTItem(scrapy.Item):
     # define the fields for your item here like:
     table = scrapy.Field()
 
-    # def __str__(self):
-    #     return ""
+    def __str__(self):
+        return ""

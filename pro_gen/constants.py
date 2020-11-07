@@ -18,7 +18,7 @@ import os
 
 # db object
 
-DATABASE = DB()
+#DATABASE = DB()
 
 # Set file storage path
 STORAGE_PATH = os.path.join(os.getcwd(), 'docs')

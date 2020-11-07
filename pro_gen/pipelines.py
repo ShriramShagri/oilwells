@@ -22,8 +22,8 @@ class DSTPipeline():
         # Since the data is credu, replace and extract would work..only thing is dont replace br tags and replace before storing to the database
         # Split at every testnumber and the list should be fine
         # Try using single pipeline if it doesn't work then switch to multiple pipelines
-        print(len(item['table']))
-        pass
+        print(item['table'])
+        return item
 
 class ProGenPipeline():
     '''
