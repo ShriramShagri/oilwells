@@ -25,28 +25,48 @@ class DSTPipeline():
             temparr = [item['kid'],]
             # TestNumber
             temparr.append(html[0].replace('\n', '').replace('</td>', '').replace('<td width="50%"><b>Test Number:</b> ', ''))
+
             # Data Source
             temparr.append(html[1].replace('\n', '').replace('</td>', '').replace('<td width="50%"><b>Data Source:</b> ', ''))
+
             # Interval, FormationTested
             temp = html[2].replace('\n', '').replace('</td>', '').split('<br>')
-            temparr.append(temp[0].replace('<td>Interval: ', ''))
-            temparr.append(temp[1].replace('Formation tested: ', ''))
+            if len(temp) == 2:
+                temparr.append(temp[0].replace('<td>Interval: ', ''))
+                temparr.append(temp[1].replace('Formation tested: ', ''))
+            elif len(temp) == 1:
+                if '<td>Interval: ' in temp:
+                    temparr.extend([temp[0].replace('<td>Interval: ', ''), ''])
+                elif 'Formation tested: ' in temp:
+                    temparr.extend(['', temp[0].replace('Formation tested: ', '')])
+                else:
+                    temparr.extend(['', ''])
+            else:
+                temparr.extend(['', ''])
+
             # Datetime
             temparr.append(html[3].replace('\n', '').replace('</td>', '').replace('<td>Date, Time: ', ''))
+
             # Main data set 1
             temp = html[4].replace('\n', '').replace('</td>', '').split('<br>')
-            extracted = []
-            for crude, junk in zip(temp, MAIN_SET1):
-                extracted.append(crude.replace(junk, ''))
-            temparr.extend(extracted)
+            if len(temp) == len(MAIN_SET1):
+                extracted = []
+                for crude, junk in zip(temp, MAIN_SET1):
+                    extracted.append(crude.replace(junk, ''))
+                temparr.extend(extracted)
+            else:
+                temparr.extend(['' for _ in range(MAIN_SET1)])
 
             # Tool Data
             temp = html[5].replace('\n', '').replace('</td>', '').split('<br>')
             temp.pop(0)
-            extracted = []
-            for crude, junk in zip(temp, MAIN_SET2):
-                extracted.append(crude.replace(junk, ''))
-            temparr.extend(extracted)
+            if len(temp) == len(MAIN_SET2):
+                extracted = []
+                for crude, junk in zip(temp, MAIN_SET2):
+                    extracted.append(crude.replace(junk, ''))
+                temparr.extend(extracted)
+            else:
+                temparr.extend(['' for _ in range(MAIN_SET2)])
 
             # Initial Flow
             if 'Bottom Hole Temperature' in html[6]:

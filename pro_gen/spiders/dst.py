@@ -4,8 +4,6 @@ from ..items import DSTItem
 from ..constants import *
 
 page = 1
-index = 0
-
 
 class Crawler(scrapy.Spider):
     name = CRAWLER_NAME['dst']
@@ -28,14 +26,14 @@ class Crawler(scrapy.Spider):
             'f_st': '15',
             'f_c': str(COUNTY[0]),
             'f_pg': str(page)
-        }, callback=self.start_scraping, meta={'index': index})
+        }, callback=self.start_scraping, meta={'index': 0})
 
     def start_scraping(self, response):
         '''
         This function is used to collect all links in the column per page and iterate through all of them
         '''
-        global page, index
-        ind = response.meta.get('index')
+        global page
+        index = response.meta.get('index')
         wellColumn = set(response.css("tr~ tr+ tr td+ td a::attr(href)").extract())
 
         # Itetrate Through All links per page
@@ -47,11 +45,11 @@ class Crawler(scrapy.Spider):
                     if 'DisplayDST' in a:
                         yield response.follow(a,
                                               callback=self.getDST,
-                                              meta={'kid': kid, 'index': ind})
+                                              meta={'kid': kid, 'index': index})
                     elif 'AcoLinks' in a:
                         yield response.follow(a,
                                               callback=self.getPDF,
-                                              meta={'kid': kid, 'index': ind})
+                                              meta={'kid': kid, 'index': index})
             page += 1
             yield response.follow(
                 f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page}",
