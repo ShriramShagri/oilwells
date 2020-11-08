@@ -65,11 +65,21 @@ class Crawler(scrapy.Spider):
         # yield response.follow('https://chasm.kgs.ku.edu/ords/dst.dst2.DisplayDST?f_kid=1006170157',
         #         callback=self.getDST,
         #         meta={'kid': '1006170161' })
+    
+    def findAPI(self, res):
+        data = res.css('hr+ table td:nth-child(1)::text').extract()
+        temp = data[1].replace('\n', '')
+        if temp == "":
+            temp = "NO_API"
+        return temp
+
 
     def getDST(self, response):
         kid = response.meta.get('kid')
+        api = self.findAPI(response)
         self.items = DSTItem()
         self.items['kid'] = kid
+        self.items['api'] = api
 
         # Table Data
         self.items['table'] = response.css('table+ table td').extract()
@@ -84,13 +94,14 @@ class Crawler(scrapy.Spider):
                     url=response.urljoin(l),
                     callback=self.save_file,
                     meta={
-                        'kid': kid, 'filename': l.split('/')[-1]}
+                        'kid': kid, 'api' : api, 'filename': l.split('/')[-1]}
                 )
 
         yield self.items
 
     def getPDF(self, response):
         kid = response.meta.get('kid')
+        api = self.findAPI(response)
 
         filelinks = response.css('li a::attr(href)').extract()
 
@@ -98,12 +109,14 @@ class Crawler(scrapy.Spider):
 
         filteredLinks = filter(f, filelinks)
 
+        count = 0
         for l in filteredLinks:
+            count+=1
             yield Request(
                 url=response.urljoin(l),
                 callback=self.save_file,
                 meta={
-                    'kid': kid, 'filename': l.split('/')[-1]}
+                    'kid': kid, 'api' : api, 'filename': f"DST Report_{count}." + l.split('.')[-1]}
             )
 
     def save_file(self, response):
@@ -114,15 +127,16 @@ class Crawler(scrapy.Spider):
 
         filename = response.meta.get('filename')
         kid = response.meta.get('kid')
+        api = response.meta.get('api')
 
         # Setup appropriate path and create directory
         if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY[index]))):
             os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY[index])))
 
-        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid)):
-            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid))
+        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid + '_' + api)):
+            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid + '_' + api))
 
-        path = os.path.join(STORAGE_PATH, str(COUNTY[index]), kid, filename)
+        path = os.path.join(STORAGE_PATH, str(COUNTY[index]), kid + '_' + api, filename)
 
         # Save the file
 
