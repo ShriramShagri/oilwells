@@ -3,8 +3,6 @@ from scrapy.http import FormRequest, Request
 from ..items import DSTItem
 from ..constants import *
 
-page = 1
-
 class Crawler(scrapy.Spider):
     name = CRAWLER_NAME['dst']
     # Start Url
@@ -17,23 +15,21 @@ class Crawler(scrapy.Spider):
         '''
         Overrided function " Let's Start Scraping!!"
         '''
-        global page
-
         #  Fill the main form Below
         page = 1
         return FormRequest.from_response(response, formdata={
             'ew': 'W',
             'f_st': '15',
             'f_c': str(COUNTY[0]),
-            'f_pg': str(page)
-        }, callback=self.start_scraping, meta={'index': 0})
+            'f_pg': '1'
+        }, callback=self.start_scraping, meta={'index': 0, 'page' : 1})
 
     def start_scraping(self, response):
         '''
         This function is used to collect all links in the column per page and iterate through all of them
         '''
-        global page
         index = response.meta.get('index')
+        page = response.meta.get('page')
         wellColumn = set(response.css("tr~ tr+ tr td+ td a::attr(href)").extract())
 
         # Itetrate Through All links per page
@@ -54,14 +50,12 @@ class Crawler(scrapy.Spider):
             yield response.follow(
                 f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page}",
                 callback=self.start_scraping,
-                meta={'index': index})
+                meta={'index': index, 'page' : page+1})
         elif index < len(COUNTY) - 1:
-            index += 1
-            page = 1
             yield response.follow(
-                f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page}",
+                f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index+1]}&f_api=&sort_by=&f_pg=1",
                 callback=self.start_scraping,
-                meta={'index': index})
+                meta={'index': index+1, 'page' : 1})
 
         # yield response.follow('https://chasm.kgs.ku.edu/ords/dst.dst2.DisplayDST?f_kid=1006170157',
         #         callback=self.getDST,
