@@ -41,11 +41,11 @@ class Crawler(scrapy.Spider):
                     if 'DisplayDST' in a:
                         yield response.follow(a,
                                               callback=self.getDST,
-                                              meta={'kid': kid, 'index': index})
+                                              meta={'kid': kid, 'index': COUNTY[index]})
                     elif 'AcoLinks' in a:
                         yield response.follow(a,
                                               callback=self.getPDF,
-                                              meta={'kid': kid, 'index': index})
+                                              meta={'kid': kid, 'index': COUNTY[index]})
             yield response.follow(
                 f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page+1}",
                 callback=self.start_scraping,
@@ -126,13 +126,13 @@ class Crawler(scrapy.Spider):
         index = response.meta.get('index')
 
         # Setup appropriate path and create directory
-        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY[index]))):
-            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY[index])))
+        if not os.path.isdir(os.path.join(STORAGE_PATH, str(index))):
+            os.mkdir(os.path.join(STORAGE_PATH, str(index)))
 
-        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid + '_' + api)):
-            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid + '_' + api))
+        if not os.path.isdir(os.path.join(STORAGE_PATH, str(index), kid + '_' + api)):
+            os.mkdir(os.path.join(STORAGE_PATH, str(index), kid + '_' + api))
 
-        path = os.path.join(STORAGE_PATH, str(COUNTY[index]), kid + '_' + api, filename)
+        path = os.path.join(STORAGE_PATH, str(index), kid + '_' + api, filename)
 
         # Save the file
 
