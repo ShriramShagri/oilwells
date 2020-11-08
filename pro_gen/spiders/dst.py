@@ -28,13 +28,14 @@ class Crawler(scrapy.Spider):
             'f_st': '15',
             'f_c': str(COUNTY[0]),
             'f_pg': str(page)
-        }, callback=self.start_scraping)
+        }, callback=self.start_scraping, meta={'index': index})
 
     def start_scraping(self, response):
         '''
         This function is used to collect all links in the column per page and iterate through all of them
         '''
         global page, index
+        ind = response.meta.get('index')
         wellColumn = set(response.css("tr~ tr+ tr td+ td a::attr(href)").extract())
 
         # Itetrate Through All links per page
@@ -46,15 +47,15 @@ class Crawler(scrapy.Spider):
                     if 'DisplayDST' in a:
                         yield response.follow(a,
                                               callback=self.getDST,
-                                              meta={'kid': kid})
+                                              meta={'kid': kid, 'index': ind})
                     elif 'AcoLinks' in a:
                         yield response.follow(a,
                                               callback=self.getPDF,
-                                              meta={'kid': kid})
+                                              meta={'kid': kid, 'index': ind})
             page += 1
             yield response.follow(
                 f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page}",
-                callback=self.start_scraping, 
+                callback=self.start_scraping,
                 meta={'index': index})
         elif index < len(COUNTY) - 1:
             index += 1
@@ -67,14 +68,13 @@ class Crawler(scrapy.Spider):
         # yield response.follow('https://chasm.kgs.ku.edu/ords/dst.dst2.DisplayDST?f_kid=1006170157',
         #         callback=self.getDST,
         #         meta={'kid': '1006170161' })
-    
+
     def findAPI(self, res):
         data = res.css('hr+ table td:nth-child(1)::text').extract()
         temp = data[1].replace('\n', '')
         if temp == "":
             temp = "NO_API"
         return temp
-
 
     def getDST(self, response):
         kid = response.meta.get('kid')
@@ -97,7 +97,7 @@ class Crawler(scrapy.Spider):
                     url=response.urljoin(l),
                     callback=self.save_file,
                     meta={
-                        'kid': kid, 'api' : api, 'filename': l.split('/')[-1], 'index': index}
+                        'kid': kid, 'api': api, 'filename': l.split('/')[-1], 'index': index}
                 )
 
         yield self.items
@@ -115,12 +115,12 @@ class Crawler(scrapy.Spider):
 
         count = 0
         for l in filteredLinks:
-            count+=1
+            count += 1
             yield Request(
                 url=response.urljoin(l),
                 callback=self.save_file,
                 meta={
-                    'kid': kid, 'api' : api, 'filename': f"DST Report_{count}." + l.split('.')[-1], 'index': index}
+                    'kid': kid, 'api': api, 'filename': f"DST Report_{count}." + l.split('.')[-1], 'index': index}
             )
 
     def save_file(self, response):
