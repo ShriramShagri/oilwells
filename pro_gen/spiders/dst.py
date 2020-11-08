@@ -54,13 +54,15 @@ class Crawler(scrapy.Spider):
             page += 1
             yield response.follow(
                 f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page}",
-                callback=self.start_scraping)
+                callback=self.start_scraping, 
+                meta={'index': index})
         elif index < len(COUNTY) - 1:
             index += 1
             page = 1
             yield response.follow(
                 f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page}",
-                callback=self.start_scraping)
+                callback=self.start_scraping,
+                meta={'index': index})
 
         # yield response.follow('https://chasm.kgs.ku.edu/ords/dst.dst2.DisplayDST?f_kid=1006170157',
         #         callback=self.getDST,
@@ -76,6 +78,7 @@ class Crawler(scrapy.Spider):
 
     def getDST(self, response):
         kid = response.meta.get('kid')
+        index = response.meta.get('index')
         api = self.findAPI(response)
         self.items = DSTItem()
         self.items['kid'] = kid
@@ -94,13 +97,14 @@ class Crawler(scrapy.Spider):
                     url=response.urljoin(l),
                     callback=self.save_file,
                     meta={
-                        'kid': kid, 'api' : api, 'filename': l.split('/')[-1]}
+                        'kid': kid, 'api' : api, 'filename': l.split('/')[-1], 'index': index}
                 )
 
         yield self.items
 
     def getPDF(self, response):
         kid = response.meta.get('kid')
+        index = response.meta.get('index')
         api = self.findAPI(response)
 
         filelinks = response.css('li a::attr(href)').extract()
@@ -116,7 +120,7 @@ class Crawler(scrapy.Spider):
                 url=response.urljoin(l),
                 callback=self.save_file,
                 meta={
-                    'kid': kid, 'api' : api, 'filename': f"DST Report_{count}." + l.split('.')[-1]}
+                    'kid': kid, 'api' : api, 'filename': f"DST Report_{count}." + l.split('.')[-1], 'index': index}
             )
 
     def save_file(self, response):
@@ -128,15 +132,16 @@ class Crawler(scrapy.Spider):
         filename = response.meta.get('filename')
         kid = response.meta.get('kid')
         api = response.meta.get('api')
+        ind = response.meta.get('index')
 
         # Setup appropriate path and create directory
-        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY[index]))):
-            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY[index])))
+        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY[ind]))):
+            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY[ind])))
 
-        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid + '_' + api)):
-            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY[index]), kid + '_' + api))
+        if not os.path.isdir(os.path.join(STORAGE_PATH, str(COUNTY[ind]), kid + '_' + api)):
+            os.mkdir(os.path.join(STORAGE_PATH, str(COUNTY[ind]), kid + '_' + api))
 
-        path = os.path.join(STORAGE_PATH, str(COUNTY[index]), kid + '_' + api, filename)
+        path = os.path.join(STORAGE_PATH, str(COUNTY[ind]), kid + '_' + api, filename)
 
         # Save the file
 
