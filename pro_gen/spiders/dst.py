@@ -27,7 +27,7 @@ class Crawler(scrapy.Spider):
             yield response.follow(
                 f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={i}&f_api=&sort_by=&f_pg=1",
                 callback=self.start_scraping,
-                meta={'index': str(i), 'page' : 1})
+                meta={'index': i, 'page' : 1})
 
 
     def start_scraping(self, response):
@@ -74,7 +74,7 @@ class Crawler(scrapy.Spider):
 
     def getDST(self, response):
         kid = response.meta.get('kid')
-        index = response.meta.get('index')
+        # index = response.meta.get('index')
         api = self.findAPI(response)
         self.items = DSTItem()
         self.items['kid'] = kid
@@ -93,14 +93,14 @@ class Crawler(scrapy.Spider):
                     url=response.urljoin(l),
                     callback=self.save_file,
                     meta={
-                        'kid': kid, 'api': api, 'filename': l.split('/')[-1], 'index': index}
+                        'kid': kid, 'api': api, 'filename': l.split('/')[-1], 'index': response.meta.get('index')}
                 )
 
         yield self.items
 
     def getPDF(self, response):
         kid = response.meta.get('kid')
-        index = response.meta.get('index')
+        # index = response.meta.get('index')
         api = self.findAPI(response)
 
         filelinks = response.css('li a::attr(href)').extract()
@@ -116,7 +116,7 @@ class Crawler(scrapy.Spider):
                 url=response.urljoin(l),
                 callback=self.save_file,
                 meta={
-                    'kid': kid, 'api': api, 'filename': f"DST Report_{count}." + l.split('.')[-1], 'index': index}
+                    'kid': kid, 'api': api, 'filename': f"DST Report_{count}." + l.split('.')[-1], 'index': response.meta.get('index')}
             )
 
     def save_file(self, response):
