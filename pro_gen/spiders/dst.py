@@ -16,13 +16,19 @@ class Crawler(scrapy.Spider):
         Overrided function " Let's Start Scraping!!"
         '''
         #  Fill the main form Below
-        page = 1
-        return FormRequest.from_response(response, formdata={
-            'ew': 'W',
-            'f_st': '15',
-            'f_c': str(COUNTY[0]),
-            'f_pg': '1'
-        }, callback=self.start_scraping, meta={'index': 0, 'page' : 1})
+        # page = 1
+        # return FormRequest.from_response(response, formdata={
+        #     'ew': 'W',
+        #     'f_st': '15',
+        #     'f_c': str(COUNTY[0]),
+        #     'f_pg': '1'
+        # }, callback=self.start_scraping, meta={'index': 0, 'page' : 1})
+        for i in COUNTY:
+            yield response.follow(
+                f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={i}&f_api=&sort_by=&f_pg=1",
+                callback=self.start_scraping,
+                meta={'index': str(i), 'page' : 1})
+
 
     def start_scraping(self, response):
         '''
@@ -36,25 +42,24 @@ class Crawler(scrapy.Spider):
         self.logger.info('No. of links: %s', len(wellColumn))
         if len(wellColumn) > 1:
             for a in wellColumn:
-                if len(a) < 80:
-                    kid = a.split('=')[-1]
-                    if 'DisplayDST' in a:
-                        yield response.follow(a,
-                                              callback=self.getDST,
-                                              meta={'kid': kid, 'index': COUNTY[index]})
-                    elif 'AcoLinks' in a:
-                        yield response.follow(a,
-                                              callback=self.getPDF,
-                                              meta={'kid': kid, 'index': COUNTY[index]})
+                kid = a.split('=')[-1]
+                if 'DisplayDST' in a:
+                    yield response.follow(a,
+                                            callback=self.getDST,
+                                            meta={'kid': kid, 'index': index})
+                elif 'AcoLinks' in a:
+                    yield response.follow(a,
+                                            callback=self.getPDF,
+                                            meta={'kid': kid, 'index': index})
             yield response.follow(
-                f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index]}&f_api=&sort_by=&f_pg={page+1}",
+                f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={index}&f_api=&sort_by=&f_pg={page+1}",
                 callback=self.start_scraping,
                 meta={'index': index, 'page' : page+1})
-        elif index < len(COUNTY) - 1:
-            yield response.follow(
-                f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index+1]}&f_api=&sort_by=&f_pg=1",
-                callback=self.start_scraping,
-                meta={'index': index+1, 'page' : 1})
+        # elif index < len(COUNTY) - 1:
+        #     yield response.follow(
+        #         f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={COUNTY[index+1]}&f_api=&sort_by=&f_pg=1",
+        #         callback=self.start_scraping,
+        #         meta={'index': index+1, 'page' : 1})
 
         # yield response.follow('https://chasm.kgs.ku.edu/ords/dst.dst2.DisplayDST?f_kid=1006170157',
         #         callback=self.getDST,
