@@ -6,6 +6,7 @@
 
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
+import re
 from .constants import *
 from .essentials import *
 
@@ -26,6 +27,7 @@ class DSTPipeline():
             temparr = [item['kid'],]
             # TestNumber
             temparr.append(html[0].replace('\n', '').replace('</td>', '').replace('<td width="50%"><b>Test Number:</b> ', ''))
+            # temparr.append(self.replacer(html[0], ['\n', '</td>', '<td width="50%">', '<b>' , 'Test Number:' ,'</b> ']))
 
             # Data Source
             temparr.append(html[1].replace('\n', '').replace('</td>', '').replace('<td width="50%"><b>Data Source:</b> ', ''))
@@ -109,6 +111,16 @@ class DSTPipeline():
             DATABASE.conn.commit()
         else:
             DATABASE.conn.commit()
+    
+    def replacer(self, text, remove, s=None):
+        rep = {i : '' for i in remove}
+        rep = dict((re.escape(k), v) for k, v in rep.items()) 
+        pattern = re.compile("|".join(rep.keys()))
+        if s:
+            return list(filter(None, pattern.sub(lambda m: rep[re.escape(m.group(0))], text).split(s)))
+        else:
+            return pattern.sub(lambda m: rep[re.escape(m.group(0))], text)
+
 
 class ProGenPipeline():
     '''
@@ -245,25 +257,27 @@ class ProGenPipeline():
         # if cuttings table is present, pass proper param
 
         if 'cutting' in keysInItem:
-            # I can't explain these :p
-            cuttingRawData = []
-            cuttingRawDatatemp = item['cutting'][2:]
-            cuttingRawDatatemp = [i.replace('\n', "") for i in cuttingRawDatatemp]
-            filterString = '$_%&^%'.join(cuttingRawDatatemp)
-            filterList = filter(None, filterString.split("Box Number: "))
-            for sts in filterList:
-                cuttingRawData.append(list(filter(None, sts.split('$_%&^%'))))
-            cuttingFilteredData = []
-
-            for j in cuttingRawData:
-                temp = list()
-                temp.extend(essentials)
-                temp.extend(j[::2])
-                cuttingFilteredData.append(temp)
-
+            # Raw html to datalist
+            try:
+                remove = ['<table border="1" align="center">', '</table>', '\n', '<br>', '</td>', '</tr>', '<td>']
+                rep = {i : '' for i in remove}
+                rep = dict((re.escape(k), v) for k, v in rep.items()) 
+                pattern = re.compile("|".join(rep.keys()))
+                cuttingRawData = list(filter(None, pattern.sub(lambda m: rep[re.escape(m.group(0))], item['cutting'][-1]).split('<tr>')))
+                cuttingFilteredData = []
+                for index, i in enumerate(cuttingRawData):
+                    cuttingFilteredData.append(list())
+                    cuttingFilteredData[index].extend(essentials)
+                    temp = list(filter(None, i.split('<strong>')))
+                    for j in temp:
+                        cuttingFilteredData[index].append(j.split('</strong>')[-1])
+                    if len(temp) == 3:
+                        cuttingFilteredData[index].append('')
+            except Exception as err:
+                self.error(essentials[0], essentials[1], str(err), 'cutting')
             # Add to table :)
-
-            self.store_cutting(cuttingFilteredData, essentials)
+            else:
+                self.store_cutting(cuttingFilteredData, essentials)
 
         return item
 
@@ -360,3 +374,8 @@ class ProGenPipeline():
             DATABASE.conn.commit()
         else:
             DATABASE.conn.commit()
+    
+    def error(self, api, kid, e, table):
+        sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
+        DATABASE.cur.execute(sql, (api, kid, e, table))
+        DATABASE.conn.commit()

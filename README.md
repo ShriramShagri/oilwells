@@ -95,6 +95,7 @@ https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1006067479
 ---
 Cuttings Data wtih 6 fields: 
 https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1042194696
+https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1043933653
 
 ---
 Cuttings data with 3 fields: 
