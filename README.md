@@ -6,6 +6,7 @@
     pip install scrapy
     pip install psycopg2
     pip install dateutil
+    pip install xlrd
 ```
 
 > Go inside pro_gen folder

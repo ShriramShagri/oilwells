@@ -27,7 +27,7 @@ DATABASE = DB()
 STORAGE_PATH = os.path.join(os.getcwd(), 'docs')
 
 # Add all county values to this tuple to be scraped
-COUNTY = (203,)
+COUNTY = (5, 13)
 
 # crawler name
 CRAWLER_NAME = {
