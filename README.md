@@ -95,6 +95,7 @@ https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1006067479
 ---
 Cuttings Data wtih 6 fields: 
 https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1042194696
+https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1043933653
 
 ---
 Cuttings data with 3 fields: 
@@ -131,3 +132,10 @@ https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayEng?f_kid=1046070165
 > Data missing should include?
 
 https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayEng?f_kid=1044596288
+
+
+
+
+> New column in cuttings?!
+
+https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1051306869
