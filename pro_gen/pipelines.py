@@ -177,82 +177,142 @@ class ProGenPipeline():
 
 
          # if casing table is present, pass proper param
-
+        
         if 'ip' in keysInItem:
-            ipRawData = [i.replace('\n', "") for i in item['ip']]
-            ipFilteredData_temp = []
+            try:
+                ipRawData = [i.replace('\n', "") for i in item['ip']]
+                ipFilteredData_temp = []
 
-            for clms in range(len(IPCOLUMNS)-1):
-                if checklist(IPCOLUMNS[clms], IPCOLUMNS[clms + 1], ipRawData):
-                    ipFilteredData_temp.append(ipRawData[ipRawData.index(IPCOLUMNS[clms]) + 1])
-                else:
-                    ipFilteredData_temp.append("") 
+                for clms in range(len(IPCOLUMNS)-1):
+                    if checklist(IPCOLUMNS[clms], IPCOLUMNS[clms + 1], ipRawData):
+                        ipFilteredData_temp.append(ipRawData[ipRawData.index(IPCOLUMNS[clms]) + 1])
+                    else:
+                        ipFilteredData_temp.append("") 
+                
+                ipFilteredData = list(essentials)
+                ipFilteredData.extend(ipFilteredData_temp)
             
-            ipFilteredData = list(essentials)
-            ipFilteredData.extend(ipFilteredData_temp)
-
-            # Add to table :)
-
-            self.store_ip(ipFilteredData, essentials)
+            except Exception as err:
+                self.error(essentials[0], essentials[1], str(err), 'pf')
+                            
+            else:
+                # Add to table :)
+                self.store_ip(ipFilteredData, essentials)
 
         # if casing table is present, pass proper param
 
         if 'casing' in keysInItem:
-            casingRawData = item['casing'][item['casing'].index('Additives') + 3:]
-            casingRawData = [i.replace('\n', "") for i in casingRawData]
-            casingFilteredData = []
+            try:
+                casingRawData = item['casing'][item['casing'].index('Additives') + 3:]
+                casingRawData = [i.replace('\n', "") for i in casingRawData]
+                casingFilteredData = []
 
-            # Let's hope the casing data repeats itself after 17 elements 
-            offset = 0
-            for i in range(len(casingRawData) // 17):
-                temp = list()
-                temp.extend(essentials)
-                if casingRawData[i * 17 + 1 + offset] == '':
-                    offset += 1
-                if (i + 1) * 17 + offset <= len(casingRawData):
-                    temp.extend(casingRawData[i * 17 + 1 + offset:(i + 1) * 17 + offset:2])
-                    casingFilteredData.append(temp)
+                # Let's hope the casing data repeats itself after 17 elements 
+                offset = 0
+                for i in range(len(casingRawData) // 17):
+                    temp = list()
+                    temp.extend(essentials)
+                    if casingRawData[i * 17 + 1 + offset] == '':
+                        offset += 1
+                    if (i + 1) * 17 + offset <= len(casingRawData):
+                        temp.extend(casingRawData[i * 17 + 1 + offset:(i + 1) * 17 + offset:2])
+                        casingFilteredData.append(temp)
+            except Exception as err:
+                self.error(essentials[0], essentials[1], str(err), 'casing')
+                            
+            else:
+                # Add to table :)
+                self.store_casing(casingFilteredData, essentials)
+
+        # Single table isn't working properly...need more details
+        # if 'pf' in keysInItem:
+        #     try:
+        #         if len(item['pf']) > 2:
+        #             pfRawData = []
+        #             for i in item['pf']:
+        #                 pfRawData.append(i.replace('<td>', '').replace('</td>', ''))
+        #             pfFilteredData = []
+        #             if len(item['pfHeaders']) % 4 == 0:
+        #                 for i in range(len(pfRawData) // 4):
+        #                     temp = list()
+        #                     temp.extend(essentials)
+        #                     temp.append(pfRawData[i * 4])
+        #                     if '-' in pfRawData[i*4 +1]:
+        #                         temp.extend(pfRawData[i*4 +1].split('-'))
+        #                         temp.extend(('', ''))
+        #                     else:
+        #                         if '-' in pfRawData[i*4 +3]:
+        #                             temp.extend(pfRawData[i*4 +3].split('-'))
+        #                             temp.extend(('', ''))
+        #                         else:
+        #                             temp.extend(['' for _ in range(4)])
+        #                     temp.append(pfRawData[i*4 +2])
+        #                     pfFilteredData.append(temp)
+
+        #             elif len(item['pfHeaders']) % 6 == 0:
+        #                 for i in range(len(pfRawData) // 6):
+        #                     temp = list()
+        #                     temp.extend(essentials)
+        #                     temp.extend(pfRawData[i * 6 :(i + 1) * 6])
+        #                     pfFilteredData.append(temp)
             
-            # Add to table :)
-
-            self.store_casing(casingFilteredData, essentials)
+        #     # Remove empty rows
+        #             if len(pfFilteredData) > 0:
+        #                 toRemove = []
+        #                 for row in pfFilteredData:
+        #                     if row.count("") >= 4:
+        #                         toRemove.append(row)
+        #                 if len(toRemove) > 0:
+        #                     for items in toRemove:
+        #                         pfFilteredData.pop(pfFilteredData.index(items))
+                
+        
+        #     # Add to table :)
+        #             if pfFilteredData:
+        #                 self.store_pf(pfFilteredData, essentials, 6)
+        #     except Exception as err:
+        #         self.error(essentials[0], essentials[1], str(err), 'pf')
 
         # if perforation table is present, pass proper param
         if 'pf' in keysInItem:
-            arrlen = 0
-            if len(item['pf']) > 2:
-                pfRawData = []
-                for i in item['pf']:
-                    pfRawData.append(i.replace('<td>', '').replace('</td>', ''))
-                pfFilteredData = []
-                if len(item['pfHeaders']) % 4 == 0:
-                    arrlen = 4
-                    for i in range(len(pfRawData) // 4):
-                        temp = list()
-                        temp.extend(essentials)
-                        temp.extend(pfRawData[i * 4 :(i + 1) * 4])
-                        pfFilteredData.append(temp)
+            try:
+                arrlen = 0
+                if len(item['pf']) > 2:
+                    pfRawData = []
+                    for i in item['pf']:
+                        pfRawData.append(i.replace('<td>', '').replace('</td>', ''))
+                    pfFilteredData = []
+                    if len(item['pfHeaders']) % 4 == 0:
+                        arrlen = 4
+                        for i in range(len(pfRawData) // 4):
+                            temp = list()
+                            temp.extend(essentials)
+                            temp.extend(pfRawData[i * 4 :(i + 1) * 4])
+                            pfFilteredData.append(temp)
 
-                elif len(item['pfHeaders']) % 6 == 0:
-                    arrlen = 6
-                    for i in range(len(pfRawData) // 6):
-                        temp = list()
-                        temp.extend(essentials)
-                        temp.extend(pfRawData[i * 6 :(i + 1) * 6])
-                        pfFilteredData.append(temp)
-        
-        # Remove empty rows
-                # if len(pfFilteredData) > 0:
-                #     toRemove = []
-                #     for row in pfFilteredData:
-                #         if row.count("") >= 3:
-                #             toRemove.append(row)
-                #     if len(toRemove) > 0:
-                #         for items in toRemove:
-                #             pfFilteredData.remove(pfFilteredData.index(items))
-        
-        # Add to table :)
-                self.store_pf(pfFilteredData, essentials, arrlen)
+                    elif len(item['pfHeaders']) % 6 == 0:
+                        arrlen = 6
+                        for i in range(len(pfRawData) // 6):
+                            temp = list()
+                            temp.extend(essentials)
+                            temp.extend(pfRawData[i * 6 :(i + 1) * 6])
+                            pfFilteredData.append(temp)
+            
+            # Remove empty rows
+                    if len(pfFilteredData) > 0:
+                        toRemove = []
+                        for row in pfFilteredData:
+                            if row.count("") >= 3:
+                                toRemove.append(row)
+                        if len(toRemove) > 0:
+                            for items in toRemove:
+                                pfFilteredData.pop(pfFilteredData.index(items))
+            
+            # Add to table :)
+                    if pfFilteredData:
+                        self.store_pf(pfFilteredData, essentials, arrlen)
+            except Exception as err:
+                self.error(essentials[0], essentials[1], str(err), 'pf')
 
         # if cuttings table is present, pass proper param
 
@@ -270,7 +330,9 @@ class ProGenPipeline():
                     cuttingFilteredData[index].extend(essentials)
                     temp = list(filter(None, i.split('<strong>')))
                     for j in temp:
-                        cuttingFilteredData[index].append(j.split('</strong>')[-1])
+                        dataPair = j.split('</strong>')
+                        if 'Confidential until: ' not in dataPair[0]:
+                            cuttingFilteredData[index].append(dataPair[-1])
                     if len(temp) == 3:
                         cuttingFilteredData[index].append('')
             except Exception as err:

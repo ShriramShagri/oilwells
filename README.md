@@ -132,3 +132,10 @@ https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayEng?f_kid=1046070165
 > Data missing should include?
 
 https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayEng?f_kid=1044596288
+
+
+
+
+> New column in cuttings?!
+
+https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1051306869

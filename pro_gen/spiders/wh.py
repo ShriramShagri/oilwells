@@ -26,9 +26,13 @@ class Crawler(scrapy.Spider):
                 meta={'index': i, 'page' : 1})
     
         # for i in COUNTY:
-        # yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1043933653',
+        # yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1046867289',
         #                         callback=self.get_data,
-        #                         meta = {'index' : 203})
+        #                         meta = {'index' : 19})
+
+        # yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayEng?f_kid=1044632327',
+        #                         callback=self.get_tables,
+        #                         meta = {'api' : 19, 'kid' : '1044632327'})
 
 
     def start_scraping(self, response):
@@ -54,7 +58,10 @@ class Crawler(scrapy.Spider):
     
     def get_data(self, response):
         self.items = ProGenItem()
+
         county = response.meta.get('index')
+
+        # <---------------------------------------------WH---------------------------------------------------->
         CURRENTKID, CURRENTAPI = '', ''
         well_data = response.css('hr+ table tr:nth-child(1) ::text').extract()
         well_data2 = response.css("table:nth-child(5) tr:nth-child(1) ::text").extract()
@@ -66,6 +73,8 @@ class Crawler(scrapy.Spider):
             self.items['wh'] = well_data2
             CURRENTAPI = well_data2[well_data2.index('API: ') + 1].replace("\n", "")
             CURRENTKID = well_data2[well_data2.index('KID: ') + 1].replace("\n", "")
+
+        # <------------------------------------------------------------------------------------------------->
 
 
         headers = response.css('h3::text').extract()
@@ -94,10 +103,8 @@ class Crawler(scrapy.Spider):
 
             except Exception as err:
                 self.error(CURRENTAPI, CURRENTKID, str(err), 'cutting')
-        # <------------------------------------------------------------------------------------------------->
 
-
-        # <---------------------------------------------PDF Downloads---------------------------------------------------->
+        # <---------------------------------------------Survey Data---------------------------------------------------->
            
         # Download Sources
         getLinks = response.css('a::attr(href)').extract()[3:]
@@ -106,7 +113,7 @@ class Crawler(scrapy.Spider):
         sourceDownloaded = False
         for lnk in getLinkNames:
             if lnk in DOWNLOAD_CHECK:
-                if lnk == SOURCES:
+                if lnk == SOURCES or lnk.split('.')[-1] == 'xlsx':
                     if not os.path.exists(os.path.join(STORAGE_PATH, str(county))):
                         os.mkdir(os.path.join(STORAGE_PATH, str(county)))
                     if not os.path.exists(os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID)):
@@ -120,6 +127,9 @@ class Crawler(scrapy.Spider):
                         meta={
                             'filename': os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID, 'Sources_' + str(count) + "." + getLinks[getLinkNames.index(lnk)].split('.')[-1]), 'ext' : getLinks[getLinkNames.index(lnk)].split('.')[-1]
                             ,'api': CURRENTAPI, 'kid': CURRENTKID} )
+
+                # <----------------------------------------Oil Production--------------------------------------------------------->
+
                 elif lnk in OIL:
                     count += 1
                     if not os.path.exists(os.path.join(STORAGE_PATH, str(county))):
@@ -131,6 +141,9 @@ class Crawler(scrapy.Spider):
                     getLinks[getLinkNames.index(lnk)].replace('.MainLease?', '.MonthSave?'),
                     callback=self.getOilData,
                     meta={'kid': CURRENTKID, 'api': CURRENTAPI, 'filename' : os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID, f'production_{count}.txt')})
+                
+                # <-------------------------------------------Pdfs------------------------------------------------------>
+
                 elif lnk in TODOWNLOAD:
                     if not os.path.exists(os.path.join(STORAGE_PATH, str(county))):
                         os.mkdir(os.path.join(STORAGE_PATH, str(county)))
@@ -145,16 +158,22 @@ class Crawler(scrapy.Spider):
                             'filename': os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID, lnk + str(count) + "." + getLinks[getLinkNames.index(lnk)].split('.')[-1]),
                             }
                     )
+
+        # <--------------------------------------------Check again for survey data----------------------------------------------------->
         if not sourceDownloaded:
             link = response.css('br+ table tr+ tr a::attr(href)').extract()
             linktext = response.css('br+ table tr+ tr a::text').extract()
+
             if type(linktext) is list and type(link) is list:
                 if len(link) > 1:
                     if link[1].split('.')[-1] == 'xlsx' or linktext[0] == SOURCES:
+
                         if not os.path.exists(os.path.join(STORAGE_PATH, str(county))):
                                 os.mkdir(os.path.join(STORAGE_PATH, str(county)))
-                        if not os.path.exists(os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID)):
-                            os.mkdir(os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID))
+
+                        if not os.path.exists(os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID +"CAUGHT")):
+                            os.mkdir(os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID+"CAUGHT"))
+
                         # Download and save xlsx
                         count += 1
                         sourceDownloaded = True
@@ -162,14 +181,22 @@ class Crawler(scrapy.Spider):
                             url=response.urljoin(link),
                             callback=self.saveExcel,
                             meta={
-                                'filename': os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID, 'Sources_' + str(count) + "." + link.split('.')[-1]), 'ext' : link.split('.')[-1]
+                                'filename': os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID+"CAUGHT", 'Sources_' + str(count) + "." + link.split('.')[-1]), 'ext' : link.split('.')[-1]
                                 ,'api': CURRENTAPI, 'kid': CURRENTKID} )
-        # Check if Engineering Data Page is present
+
+        # <------------------------------------------------------------------------------------------------->
+
+        # # Check if Engineering Data Page is present
         toggleEngineering = response.css("hr+ table a").xpath("@href").extract()
         toggleEngineeringText = response.css("hr+ table a::text").extract()
         self.items['api'], self.items['kid'] = CURRENTAPI, CURRENTKID
-        # Change function if Engineering Data Page is found
+
+        # <------------------------------------------------------------------------------------------------->
+
         yield self.items
+
+        # <----------------------------------------------Engg Data--------------------------------------------------->
+
         if toggleEngineeringText:
             if toggleEngineeringText[0] == "View Engineering Data" and toggleEngineering:
                 yield response.follow(toggleEngineering[0], callback=self.get_tables,
@@ -180,28 +207,56 @@ class Crawler(scrapy.Spider):
         This function is used to Data from engineering page
         '''
         self.items = ProGenItem()
-        # global CURRENTKID, CURRENTAPI
+
         CURRENTKID, CURRENTAPI = '', ''
+
         CURRENTKID, kid = response.meta.get('kid'), response.meta.get('kid')
         CURRENTAPI, api = response.meta.get('api'), response.meta.get('api')
+
         self.logger.info('Switched to Engineering Data: KID= %s', CURRENTKID)
+
         self.items['api'], self.items['kid'] = api, kid
+
         # Get All H3 tags to recognise all headings inside tables in the page
         headers = response.css('td h3::text').extract()
+
+        # <-------------------------------------------Casing------------------------------------------------------>
         if "Casing record" in headers:
             # Collect casing table and Send to Pipeline (Multiple css elector path might be present)
             casing_data = response.css("table:nth-child(9) ::text").extract()
-            self.items['casing'] = casing_data
+            if casing_data:
+                if 'Casing record' in casing_data:
+                    self.items['casing'] = casing_data
+                else:
+                    self.error(CURRENTAPI, CURRENTKID, 'Wrong Table', 'casing')
+            else:
+                self.error(CURRENTAPI, CURRENTKID, 'Table missing', 'casing')
+
+        # <------------------------------------------Perforation------------------------------------------------------->
         if "Perforation Record" in headers:
             # Collect pf table and Send to Pipeline (Multiple css elector path might be present)
-            perforationHeaders = response.css('table:nth-child(13) th').extract()
-            perforation_data = response.css("table:nth-child(13) tr+ tr td").extract()
-            self.items['pfHeaders'] = perforationHeaders
-            self.items['pf'] = perforation_data
+            try:
+                perforationHeaders = response.css('table:nth-child(13) th').extract()
+                perforation_data = response.css("table:nth-child(13) tr+ tr td").extract()
+                if '<th>Shots Per Foot</th>' in perforationHeaders:
+                    self.items['pfHeaders'] = perforationHeaders
+                    self.items['pf'] = perforation_data
+                else:
+                    self.error(CURRENTAPI, CURRENTKID, 'Wrong Table', 'pf')
+            except Exception as err:
+                self.error(CURRENTAPI, CURRENTKID, str(err), 'pf')
+
+        # <------------------------------------------IP------------------------------------------------------->
         # Collect IP table and Send to Pipeline (Multiple css elector path might be present)
         initial_potential = response.css('table:nth-child(7) td ::text').extract()
         if initial_potential:
-            self.items['ip'] = initial_potential
+            if '\nProducing Method: ' in initial_potential:
+                self.items['ip'] = initial_potential
+            else:
+                self.error(CURRENTAPI, CURRENTKID, 'Wrong Table or data missing', 'ip')
+        else:
+            self.error(CURRENTAPI, CURRENTKID, 'Table missing', 'ip')
+
         yield self.items
 
     def saveExcel(self, response):
