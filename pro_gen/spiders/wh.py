@@ -125,22 +125,24 @@ class Crawler(scrapy.Spider):
                             }
                     )
         if not sourceDownloaded:
-            link = response.css('br+ table tr+ tr a::attr(href)').extract()[1:]
+            link = response.css('br+ table tr+ tr a::attr(href)').extract()
             linktext = response.css('br+ table tr+ tr a::text').extract()
-            if link[0].split('.')[-1] == 'xlsx' or linktext[0] == SOURCES:
-                if not os.path.exists(os.path.join(STORAGE_PATH, str(county))):
-                        os.mkdir(os.path.join(STORAGE_PATH, str(county)))
-                if not os.path.exists(os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID)):
-                    os.mkdir(os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID))
-                # Download and save xlsx
-                count += 1
-                sourceDownloaded = True
-                yield Request(
-                    url=response.urljoin(link),
-                    callback=self.saveExcel,
-                    meta={
-                        'filename': os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID, 'Sources_' + str(count) + "." + link.split('.')[-1]), 'ext' : link.split('.')[-1]
-                        ,'api': CURRENTAPI, 'kid': CURRENTKID} )
+            if type(linktext) is list and type(link) is list:
+                if len(link) > 1:
+                    if link[1].split('.')[-1] == 'xlsx' or linktext[0] == SOURCES:
+                        if not os.path.exists(os.path.join(STORAGE_PATH, str(county))):
+                                os.mkdir(os.path.join(STORAGE_PATH, str(county)))
+                        if not os.path.exists(os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID)):
+                            os.mkdir(os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID))
+                        # Download and save xlsx
+                        count += 1
+                        sourceDownloaded = True
+                        yield Request(
+                            url=response.urljoin(link),
+                            callback=self.saveExcel,
+                            meta={
+                                'filename': os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID, 'Sources_' + str(count) + "." + link.split('.')[-1]), 'ext' : link.split('.')[-1]
+                                ,'api': CURRENTAPI, 'kid': CURRENTKID} )
         # Check if Engineering Data Page is present
         toggleEngineering = response.css("hr+ table a").xpath("@href").extract()
         toggleEngineeringText = response.css("hr+ table a::text").extract()
@@ -199,11 +201,11 @@ class Crawler(scrapy.Spider):
             try:
                 with open(os.path.join(os.path.dirname(filename), 'testcsv.csv'), 'r') as f:
                     next(f) # Skip the header row.
-                    DATABASE.cur.copy_from(f, 'sources', sep=',')
+                    DATABASE.cur.copy_from(f, 'st', sep=',')
             except Exception as e:
                 DATABASE.conn.rollback()
                 sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
-                DATABASE.cur.execute(sql, (api, kid, str(e), "sources"))
+                DATABASE.cur.execute(sql, (api, kid, str(e), "st"))
                 DATABASE.conn.commit()
             else:
                 DATABASE.conn.commit()
