@@ -63,9 +63,9 @@ DOWNLOAD_FAIL_ON_DATALOSS = False
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-ITEM_PIPELINES = {
-   'pro_gen.pipelines.DSTPipeline': 300,
-}
+# ITEM_PIPELINES = {
+#    'pro_gen.pipelines.DSTPipeline': 300,
+# }
 
 # Enable for main Scraper
 # ITEM_PIPELINES = {

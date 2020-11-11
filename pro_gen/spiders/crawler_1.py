@@ -2,6 +2,7 @@ import scrapy
 from scrapy.http import FormRequest, Request
 from ..items import ProGenItem
 from ..constants import *
+from ..essentials import *
 import os
 from dateutil.parser import parse
 
