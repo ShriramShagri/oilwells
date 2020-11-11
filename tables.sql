@@ -171,8 +171,8 @@ CREATE TABLE dst(
    Recovery TEXT
 );
 
-DROP TABLE IF EXISTS sources;
-CREATE TABLE sources(
+DROP TABLE IF EXISTS st;
+CREATE TABLE st(
    Well_ID TEXT,
    Survey_Pt TEXT,
    MD TEXT,
