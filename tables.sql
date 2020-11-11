@@ -170,3 +170,15 @@ CREATE TABLE dst(
    Comments TEXT,
    Recovery TEXT
 );
+
+DROP TABLE IF EXISTS st;
+CREATE TABLE st(
+   Well_ID TEXT,
+   Survey_Pt TEXT,
+   MD TEXT,
+   INCL TEXT,
+   AZIM TEXT,
+   TVD TEXT,
+   NS TEXT,
+   EW TEXT
+);
