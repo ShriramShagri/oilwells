@@ -18,14 +18,15 @@ class Crawler(scrapy.Spider):
         Overrided function " Let's Start Scraping!!"
         '''
         for i in COUNTY:
-            os.mkdir(os.path.join(STORAGE_PATH, str(i)))
+            if not os.path.exists(os.path.join(STORAGE_PATH, str(i))):
+                os.mkdir(os.path.join(STORAGE_PATH, str(i)))
             yield response.follow(
                 f'https://chasm.kgs.ku.edu/ords/qualified.ogw5.SelectWells?f_t=&f_r=&ew=W&f_s=&f_l=&f_op=&f_st=15&f_c={i}&f_ws=ALL&f_api=&sort_by=&f_pg=1',
                 callback=self.start_scraping,
                 meta={'index': i, 'page' : 1})
     
         # for i in COUNTY:
-        # yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1044170766',
+        # yield response.follow('https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1043933653',
         #                         callback=self.get_data,
         #                         meta = {'index' : 203})
 
@@ -65,20 +66,40 @@ class Crawler(scrapy.Spider):
             self.items['wh'] = well_data2
             CURRENTAPI = well_data2[well_data2.index('API: ') + 1].replace("\n", "")
             CURRENTKID = well_data2[well_data2.index('KID: ') + 1].replace("\n", "")
+
+
         headers = response.css('h3::text').extract()
-        # Change text to html
+
+        # <------------------------------------------Cuttings------------------------------------------------------->
         if "Cuttings Data" in headers:
-            cutting = response.css(f'table:nth-child({(headers.index("Cuttings Data") + 1) * 2}) ::text').extract()
-            if cutting:
-                if 3 < len(cutting) < 15:
-                    self.items['cutting'] = cutting
-            else:
-                cutting = response.css(
-                    f'table:nth-child({headers.index("Cuttings Data") * 2}) ::text').extract()  # Care to be taken if multiple css selectors are present
-                if cutting:
-                    if 3 < len(cutting) < 15:
-                        self.items['cutting'] = cutting
-        # # Download Sources
+            try:
+                error = [False, '']
+                possibleCss = ['table:nth-child(6)', 'table:nth-child(2)', 'table:nth-child(4)', 'table:nth-child(8)', 'td table~ table', 'table:nth-child(10)']
+
+                for c in possibleCss:
+                    cutting = response.css(c).extract()
+                    if len(cutting) > 0:
+                        if 'Box Number:' in cutting[-1]:
+                            self.items['cutting'] = cutting
+                            error = [False, '']
+                        else:
+                            error = [True, "No 'Box Number:' in the retrived list"]
+                    else:
+                        error = [True, "Len of table = 0"]
+                    if not error[0]:
+                        break
+                if error[0]:
+                    # Still errors :(
+                    self.error(CURRENTAPI, CURRENTKID, error[1], 'cutting')
+
+            except Exception as err:
+                self.error(CURRENTAPI, CURRENTKID, str(err), 'cutting')
+        # <------------------------------------------------------------------------------------------------->
+
+
+        # <---------------------------------------------PDF Downloads---------------------------------------------------->
+           
+        # Download Sources
         getLinks = response.css('a::attr(href)').extract()[3:]
         getLinkNames = response.css('a::text').extract()
         count = 0
@@ -276,7 +297,7 @@ class Crawler(scrapy.Spider):
         else:
             DATABASE.conn.commit()
 
-    def error(api, kid, e, table):
+    def error(self, api, kid, e, table):
         sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
-        DATABASE.cur.execute(sql, (api, kid, str(e), table))
+        DATABASE.cur.execute(sql, (api, kid, e, table))
         DATABASE.conn.commit()
