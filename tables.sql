@@ -144,6 +144,7 @@ CREATE TABLE pf(
 DROP TABLE IF EXISTS dst;
 CREATE TABLE dst(
    kid TEXT,
+   api TEXT,
    Test_number TEXT,
    Data_Source TEXT,
    Interval TEXT,

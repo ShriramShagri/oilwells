@@ -17,6 +17,8 @@ class Crawler(scrapy.Spider):
         Overrided function " Let's Start Scraping!!"
         '''
         for i in COUNTY:
+            if not os.path.exists(os.path.join(STORAGE_PATH, str(i))):
+                os.mkdir(os.path.join(STORAGE_PATH, str(i)))
             yield response.follow(
                 f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={i}&f_api=&sort_by=&f_pg=1",
                 callback=self.start_scraping,
@@ -113,8 +115,6 @@ class Crawler(scrapy.Spider):
         index = response.meta.get('index')
 
         # Setup appropriate path and create directory
-        if not os.path.isdir(os.path.join(STORAGE_PATH, str(index))):
-            os.mkdir(os.path.join(STORAGE_PATH, str(index)))
 
         if not os.path.isdir(os.path.join(STORAGE_PATH, str(index), kid + '_' + api)):
             os.mkdir(os.path.join(STORAGE_PATH, str(index), kid + '_' + api))
