@@ -24,7 +24,7 @@ class DSTPipeline():
             crudeData.append(item['table'][i*13:(i+1)*13])
         
         for html in crudeData:
-            temparr = [item['kid'],]
+            temparr = [item['kid'], item['api']]
             # TestNumber
             temparr.append(html[0].replace('\n', '').replace('</td>', '').replace('<td width="50%"><b>Test Number:</b> ', ''))
             # temparr.append(self.replacer(html[0], ['\n', '</td>', '<td width="50%">', '<b>' , 'Test Number:' ,'</b> ']))
@@ -92,22 +92,22 @@ class DSTPipeline():
                 temparr.append('')
             cleanData.append(temparr)
         
-        self.store_dst(cleanData, item['kid'])
+        self.store_dst(cleanData, item['kid'], item['api'])
 
         return item
       
-    def store_dst(self, item, kid):
+    def store_dst(self, item, kid, api):
         '''
         Store casing to table
         '''
         try:
             args_str = b','.join(
-                DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+                DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
             DATABASE.cur.execute("INSERT INTO dst VALUES " + args_str)
         except Exception as e:
             DATABASE.conn.rollback()
             sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
-            DATABASE.cur.execute(sql, ('', kid, str(e), "dst"))
+            DATABASE.cur.execute(sql, (api, kid, str(e), "dst"))
             DATABASE.conn.commit()
         else:
             DATABASE.conn.commit()
