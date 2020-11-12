@@ -224,55 +224,6 @@ class ProGenPipeline():
                 # Add to table :)
                 self.store_casing(casingFilteredData, essentials)
 
-        # Single table isn't working properly...need more details
-        # if 'pf' in keysInItem:
-        #     try:
-        #         if len(item['pf']) > 2:
-        #             pfRawData = []
-        #             for i in item['pf']:
-        #                 pfRawData.append(i.replace('<td>', '').replace('</td>', ''))
-        #             pfFilteredData = []
-        #             if len(item['pfHeaders']) % 4 == 0:
-        #                 for i in range(len(pfRawData) // 4):
-        #                     temp = list()
-        #                     temp.extend(essentials)
-        #                     temp.append(pfRawData[i * 4])
-        #                     if '-' in pfRawData[i*4 +1]:
-        #                         temp.extend(pfRawData[i*4 +1].split('-'))
-        #                         temp.extend(('', ''))
-        #                     else:
-        #                         if '-' in pfRawData[i*4 +3]:
-        #                             temp.extend(pfRawData[i*4 +3].split('-'))
-        #                             temp.extend(('', ''))
-        #                         else:
-        #                             temp.extend(['' for _ in range(4)])
-        #                     temp.append(pfRawData[i*4 +2])
-        #                     pfFilteredData.append(temp)
-
-        #             elif len(item['pfHeaders']) % 6 == 0:
-        #                 for i in range(len(pfRawData) // 6):
-        #                     temp = list()
-        #                     temp.extend(essentials)
-        #                     temp.extend(pfRawData[i * 6 :(i + 1) * 6])
-        #                     pfFilteredData.append(temp)
-            
-        #     # Remove empty rows
-        #             if len(pfFilteredData) > 0:
-        #                 toRemove = []
-        #                 for row in pfFilteredData:
-        #                     if row.count("") >= 4:
-        #                         toRemove.append(row)
-        #                 if len(toRemove) > 0:
-        #                     for items in toRemove:
-        #                         pfFilteredData.pop(pfFilteredData.index(items))
-                
-        
-        #     # Add to table :)
-        #             if pfFilteredData:
-        #                 self.store_pf(pfFilteredData, essentials, 6)
-        #     except Exception as err:
-        #         self.error(essentials[0], essentials[1], str(err), 'pf')
-
         # if perforation table is present, pass proper param
         if 'pf' in keysInItem:
             try:
@@ -340,6 +291,25 @@ class ProGenPipeline():
             # Add to table :)
             else:
                 self.store_cutting(cuttingFilteredData, essentials)
+        
+        if 'tops' in keysInItem:
+            try:
+                remove = ['<table border="1" align="center">', '</table>', '\n', '</tr>', '</td>', '\xa0']
+                rep = {i : '' for i in remove}
+                rep = dict((re.escape(k), v) for k, v in rep.items()) 
+                pattern = re.compile("|".join(rep.keys()))
+                topsRawData = list(filter(None, pattern.sub(lambda m: rep[re.escape(m.group(0))], item['tops']).split('</th>')[-1].split('<tr>')))
+                topsFilteredData = []
+                for index, i in enumerate(topsRawData):
+                    topsFilteredData.append([])
+                    topsFilteredData[index].extend(essentials)
+                    topsFilteredData[index].extend(i.split('<td>')[1:])
+            except Exception as err:
+                self.error(essentials[0], essentials[1], str(err), 'tops')
+            
+            else:
+                self.store_tops(topsFilteredData, essentials)
+            
 
         return item
 
@@ -433,6 +403,24 @@ class ProGenPipeline():
             api, kid = ess
             sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
             DATABASE.cur.execute(sql, (api, kid, str(e), f"Perforation{arrlen}"))
+            DATABASE.conn.commit()
+        else:
+            DATABASE.conn.commit()
+    
+    def store_tops(self, item, ess):
+        '''
+        Store casing to table
+        '''
+        try:
+            args_str = b','.join(
+                DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode(
+                "utf-8")
+            DATABASE.cur.execute("INSERT INTO tops VALUES " + args_str)
+        except Exception as e:
+            api, kid = ess
+            DATABASE.conn.rollback()
+            sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
+            DATABASE.cur.execute(sql, (api, kid, str(e), "Tops"))
             DATABASE.conn.commit()
         else:
             DATABASE.conn.commit()

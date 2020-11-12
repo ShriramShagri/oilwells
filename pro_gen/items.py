@@ -16,6 +16,7 @@ class ProGenItem(scrapy.Item):
     api = scrapy.Field()
     kid = scrapy.Field()
     pfHeaders = scrapy.Field()
+    tops = scrapy.Field()
 
     def __str__(self):
         return ""

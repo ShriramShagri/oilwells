@@ -139,3 +139,8 @@ https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayEng?f_kid=1044596288
 > New column in cuttings?!
 
 https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1051306869
+
+
+> Error 
+
+https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1006084758

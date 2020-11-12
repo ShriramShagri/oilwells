@@ -63,6 +63,3 @@ MAIN_SET4 = (
 DOWNLOAD_CHECK.append(SOURCES)
 DOWNLOAD_CHECK.extend(OIL)
 DOWNLOAD_CHECK.extend(TODOWNLOAD)
-
-TESTDATA = ['https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1044170766', 'https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1041231775',
-'https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1002880481']
