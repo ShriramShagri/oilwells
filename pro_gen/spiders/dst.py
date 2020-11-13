@@ -1,6 +1,6 @@
 import scrapy
 from scrapy.http import FormRequest, Request
-from ..items import DSTItem
+from ..items import ProGenItem
 from ..constants import *
 from ..essentials import *
 
@@ -22,7 +22,11 @@ class Crawler(scrapy.Spider):
             yield response.follow(
                 f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={i}&f_api=&sort_by=&f_pg=1",
                 callback=self.start_scraping,
-                meta={'index': i, 'page' : 1})
+                meta={'index': i, 'page' : 1,  'm' : 0})
+        
+        # yield response.follow('https://chasm.kgs.ku.edu/ords/dst.dst2.DisplayDST?f_kid=1002954645',
+        #     callback=self.getDST,
+        #     meta={'kid': '1002954645', 'index': 203})
 
 
     def start_scraping(self, response):
@@ -31,7 +35,24 @@ class Crawler(scrapy.Spider):
         '''
         index = response.meta.get('index')
         page = response.meta.get('page')
-        wellColumn = set(response.css("tr~ tr+ tr td+ td a::attr(href)").extract())
+        multi = response.meta.get('m')
+        # wellColumn = None
+
+        if multi == 0:
+            test1 = set(response.css("tr~ tr+ tr td+ td a::attr(href)").extract())
+            test2 = set(response.css("tr+ tr td+ td a::attr(href)").extract())
+            if len(test1) == 50:
+                wellColumn = test1
+                multi = 1
+            else:
+                wellColumn = test2
+                multi = 2
+        
+        elif multi == 1:
+            wellColumn = set(response.css("tr~ tr+ tr td+ td a::attr(href)").extract())
+        
+        elif multi == 2:
+            wellColumn = set(response.css("tr+ tr td+ td a::attr(href)").extract())
 
         # Itetrate Through All links per page
         self.logger.info('No. of links: %s', len(wellColumn))
@@ -49,7 +70,7 @@ class Crawler(scrapy.Spider):
             yield response.follow(
                 f"https://chasm.kgs.ku.edu/ords/dst.dst2.SelectWells?f_t=&f_r=&ew=&f_s=&f_l=&f_op=&f_st=15&f_c={index}&f_api=&sort_by=&f_pg={page+1}",
                 callback=self.start_scraping,
-                meta={'index': index, 'page' : page+1})
+                meta={'index': index, 'page' : page+1, 'm' : multi})
 
     def findAPI(self, res):
         data = res.css('hr+ table td:nth-child(1)::text').extract()
@@ -61,12 +82,13 @@ class Crawler(scrapy.Spider):
     def getDST(self, response):
         kid = response.meta.get('kid')
         api = self.findAPI(response)
-        self.items = DSTItem()
+
+        self.items = ProGenItem()
         self.items['kid'] = kid
         self.items['api'] = api
 
         # Table Data
-        self.items['table'] = response.css('table+ table td').extract()
+        self.items['dst'] = response.css('table+ table td').extract()
 
         # Downloads
         downloadLinks = response.css('tr+ tr a::attr(href)').extract()
@@ -126,3 +148,8 @@ class Crawler(scrapy.Spider):
         self.logger.info('Saving PDF %s', path)
         with open(path, 'wb') as file:
             file.write(response.body)
+
+    def error(self, api, kid, e, table):
+        sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
+        DATABASE.cur.execute(sql, (api, kid, e, table))
+        DATABASE.conn.commit()
