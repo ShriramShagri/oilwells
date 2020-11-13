@@ -143,8 +143,8 @@ CREATE TABLE pf(
 -- Change Order if required
 DROP TABLE IF EXISTS dst;
 CREATE TABLE dst(
-   kid TEXT,
    api TEXT,
+   kid TEXT,
    Test_number TEXT,
    Data_Source TEXT,
    Interval TEXT,
