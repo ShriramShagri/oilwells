@@ -10,118 +10,6 @@ import re
 from .constants import *
 from .essentials import *
 
-class DSTPipeline():
-    '''
-    Handle Data Like Pro
-    '''
-    def process_item(self, item, spider):
-        '''
-        Check for all the data sent and handle them with care 
-        '''
-        crudeData = []
-        cleanData = []
-        for i in range(len(item['table'])// 13):
-            crudeData.append(item['table'][i*13:(i+1)*13])
-        
-        for html in crudeData:
-            temparr = [item['kid'], item['api']]
-            # TestNumber
-            temparr.append(html[0].replace('\n', '').replace('</td>', '').replace('<td width="50%"><b>Test Number:</b> ', ''))
-            # temparr.append(self.replacer(html[0], ['\n', '</td>', '<td width="50%">', '<b>' , 'Test Number:' ,'</b> ']))
-
-            # Data Source
-            temparr.append(html[1].replace('\n', '').replace('</td>', '').replace('<td width="50%"><b>Data Source:</b> ', ''))
-
-            # Interval, FormationTested
-            temp = html[2].replace('\n', '').replace('</td>', '').split('<br>')
-            if len(temp) == 2:
-                temparr.append(temp[0].replace('<td>Interval: ', ''))
-                temparr.append(temp[1].replace('Formation tested: ', ''))
-            elif len(temp) == 1:
-                if '<td>Interval: ' in temp:
-                    temparr.extend([temp[0].replace('<td>Interval: ', ''), ''])
-                elif 'Formation tested: ' in temp:
-                    temparr.extend(['', temp[0].replace('Formation tested: ', '')])
-                else:
-                    temparr.extend(['', ''])
-            else:
-                temparr.extend(['', ''])
-
-            # Datetime
-            temparr.append(html[3].replace('\n', '').replace('</td>', '').replace('<td>Date, Time: ', ''))
-
-            # Main data set 1
-            temp = html[4].replace('\n', '').replace('</td>', '').split('<br>')
-            if len(temp) == len(MAIN_SET1):
-                extracted = []
-                for crude, junk in zip(temp, MAIN_SET1):
-                    extracted.append(crude.replace(junk, ''))
-                temparr.extend(extracted)
-            else:
-                temparr.extend(['' for _ in range(MAIN_SET1)])
-
-            # Tool Data
-            temp = html[5].replace('\n', '').replace('</td>', '').split('<br>')
-            temp.pop(0)
-            if len(temp) == len(MAIN_SET2):
-                extracted = []
-                for crude, junk in zip(temp, MAIN_SET2):
-                    extracted.append(crude.replace(junk, ''))
-                temparr.extend(extracted)
-            else:
-                temparr.extend(['' for _ in range(MAIN_SET2)])
-
-            # Initial Flow
-            if 'Bottom Hole Temperature' in html[6]:
-                temparr.append('')
-                html.insert(6, '')
-            else:
-                temparr.append(';'.join(list(filter(None, html[6].replace('\n', '').replace('<td colspan="2">','').replace('</td>', '').split('<br>')))))
-
-            # Bottom Hole Temperature
-            temp = html[7].replace('\n', '').replace('</td>', '').split('<br>')
-            extracted = []
-            for crude, junk in zip(temp, MAIN_SET4):
-                extracted.append(crude.replace(junk, ''))
-            temparr.extend(extracted)
-
-            # Recovery
-            if 'Recovery' in html[8]:
-                temparr.append(';'.join(list(filter(None, html[8].replace('\n', '').replace('</td>', '').replace('<td colspan="2"><b>Recovery</b><br>', '').split('<br>')))))
-            else:
-                temparr.append('')
-            cleanData.append(temparr)
-        
-        self.store_dst(cleanData, item['kid'], item['api'])
-
-        return item
-      
-    def store_dst(self, item, kid, api):
-        '''
-        Store casing to table
-        '''
-        try:
-            args_str = b','.join(
-                DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
-            DATABASE.cur.execute("INSERT INTO dst VALUES " + args_str)
-        except Exception as e:
-            DATABASE.conn.rollback()
-            sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
-            DATABASE.cur.execute(sql, (api, kid, str(e), "dst"))
-            DATABASE.conn.commit()
-        else:
-            DATABASE.conn.commit()
-    
-    def replacer(self, text, remove, s=None):
-        rep = {i : '' for i in remove}
-        rep = dict((re.escape(k), v) for k, v in rep.items()) 
-        pattern = re.compile("|".join(rep.keys()))
-        if s:
-            return list(filter(None, pattern.sub(lambda m: rep[re.escape(m.group(0))], text).split(s)))
-        else:
-            return pattern.sub(lambda m: rep[re.escape(m.group(0))], text)
-
-
 class ProGenPipeline():
     '''
     Handle Data Like Pro
@@ -222,7 +110,8 @@ class ProGenPipeline():
                             
             else:
                 # Add to table :)
-                self.store_casing(casingFilteredData, essentials)
+                if len(casingFilteredData) > 0:
+                    self.store_casing(casingFilteredData, essentials)
 
         # if perforation table is present, pass proper param
         if 'pf' in keysInItem:
@@ -309,9 +198,114 @@ class ProGenPipeline():
             
             else:
                 self.store_tops(topsFilteredData, essentials)
-            
+        
+        if 'dst' in keysInItem:
+            try:
+                crudeData = []
+                cleanData = []
+                track = -1
+                for i in item['dst']:
+                    if 'Test Number:' in i:
+                        crudeData.append([])
+                        track += 1
+                    if track >= 0:
+                        crudeData[track].append(i)
+
+                
+                for html in crudeData:
+                    try:
+                        temparr = []
+                        temparr.extend(essentials)
+                        # TestNumber
+                        temparr.append(html[0].replace('\n', '').replace('</td>', '').replace('<td width="50%"><b>Test Number:</b> ', ''))
+
+                        # Data Source
+                        temparr.append(html[1].replace('\n', '').replace('</td>', '').replace('<td width="50%"><b>Data Source:</b> ', ''))
+
+                        # Interval, FormationTested
+                        temp = html[2].replace('\n', '').replace('</td>', '').split('<br>')
+                        if len(temp) == 2:
+                            temparr.append(temp[0].replace('<td>Interval: ', ''))
+                            temparr.append(temp[1].replace('Formation tested: ', ''))
+                        elif len(temp) == 1:
+                            if '<td>Interval: ' in temp:
+                                temparr.extend([temp[0].replace('<td>Interval: ', ''), ''])
+                            elif 'Formation tested: ' in temp:
+                                temparr.extend(['', temp[0].replace('Formation tested: ', '')])
+                            else:
+                                temparr.extend(['', ''])
+                        else:
+                            temparr.extend(['', ''])
+
+                        # Datetime
+                        if 'Date, Time:' in html[3]:
+                            temparr.append(html[3].replace('\n', '').replace('</td>', '').replace('<td>Date, Time: ', ''))
+                        else:
+                            temparr.append('')
+
+                        # Main data set 1
+                        temp = html[4].replace('\n', '').replace('</td>', '').split('<br>')
+                        if len(temp) == len(MAIN_SET1):
+                            extracted = []
+                            for crude, junk in zip(temp, MAIN_SET1):
+                                extracted.append(crude.replace(junk, ''))
+                            temparr.extend(extracted)
+                        else:
+                            temparr.extend(['' for _ in range(MAIN_SET1)])
+
+                        # Tool Data
+                        temp = html[5].replace('\n', '').replace('</td>', '').split('<br>')
+                        temp.pop(0)
+                        if len(temp) == len(MAIN_SET2):
+                            extracted = []
+                            for crude, junk in zip(temp, MAIN_SET2):
+                                extracted.append(crude.replace(junk, ''))
+                            temparr.extend(extracted)
+                        else:
+                            temparr.extend(['' for _ in range(MAIN_SET2)])
+
+                        # Initial Flow
+                        if 'Bottom Hole Temperature' in html[6]:
+                            temparr.append('')
+                            html.insert(6, '')
+                        else:
+                            temparr.append(';'.join(list(filter(None, html[6].replace('\n', '').replace('<td colspan="2">','').replace('</td>', '').split('<br>')))))
+
+                        # Bottom Hole Temperature
+                        if 'Bottom Hole Temperature' in html[6]:
+                            temp = html[7].replace('\n', '').replace('</td>', '').split('<br>')
+                            extracted = []
+                            for crude, junk in zip(temp, MAIN_SET4):
+                                extracted.append(crude.replace(junk, ''))
+                            temparr.extend(extracted)
+                        else:
+                            temparr.extend(['' for _ in range(len(MAIN_SET4))])
+
+                        # Recovery
+                        if 'Recovery' in html[8]:
+                            temparr.append(';'.join(list(filter(None, html[8].replace('\n', '').replace('</td>', '').replace('<td colspan="2"><b>Recovery</b><br>', '').split('<br>')))))
+                        else:
+                            temparr.append('')
+                        cleanData.append(temparr)
+                    except Exception as err:
+                        self.error(essentials[0], essentials[1], str(err), 'dst')
+                        continue
+            except Exception as err:
+                self.error(essentials[0], essentials[1], str(err), 'dst')
+            else:
+                self.store_dst(cleanData, essentials)
 
         return item
+    
+
+    def replacer(self, text, remove, s=None):
+        rep = {i : '' for i in remove}
+        rep = dict((re.escape(k), v) for k, v in rep.items()) 
+        pattern = re.compile("|".join(rep.keys()))
+        if s:
+            return list(filter(None, pattern.sub(lambda m: rep[re.escape(m.group(0))], text).split(s)))
+        else:
+            return pattern.sub(lambda m: rep[re.escape(m.group(0))], text)
 
     def store_wh(self, item):
         '''
@@ -421,6 +415,23 @@ class ProGenPipeline():
             DATABASE.conn.rollback()
             sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
             DATABASE.cur.execute(sql, (api, kid, str(e), "Tops"))
+            DATABASE.conn.commit()
+        else:
+            DATABASE.conn.commit()
+    
+    def store_dst(self, item, ess):
+        '''
+        Store casing to table
+        '''
+        try:
+            args_str = b','.join(
+                DATABASE.cur.mogrify("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+            DATABASE.cur.execute("INSERT INTO dst VALUES " + args_str)
+        except Exception as e:
+            DATABASE.conn.rollback()
+            api, kid = ess
+            sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
+            DATABASE.cur.execute(sql, (api, kid, str(e), "dst"))
             DATABASE.conn.commit()
         else:
             DATABASE.conn.commit()

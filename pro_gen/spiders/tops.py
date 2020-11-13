@@ -80,13 +80,11 @@ class Crawler(scrapy.Spider):
         self.items['kid'] = CURRENTKID
 
         if 'View tops for this well' in getLinkNames:
-            print(getLinks[getLinkNames.index('View tops for this well')])
             yield Request(
                 url=getLinks[getLinkNames.index('View tops for this well')],
                 callback=self.getTopsTable,
                 meta={ 'api': CURRENTAPI, 'kid': CURRENTKID} 
                 )
-            # Formation or Top or Base
         else:
             try:
                 error = [False, '']

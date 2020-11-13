@@ -17,15 +17,7 @@ class ProGenItem(scrapy.Item):
     kid = scrapy.Field()
     pfHeaders = scrapy.Field()
     tops = scrapy.Field()
-
-    def __str__(self):
-        return ""
-    
-class DSTItem(scrapy.Item):
-    # define the fields for your item here like:
-    table = scrapy.Field()
-    kid = scrapy.Field()
-    api = scrapy.Field()
+    dst = scrapy.Field()
 
     def __str__(self):
         return ""
