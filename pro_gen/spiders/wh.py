@@ -130,7 +130,7 @@ class Crawler(scrapy.Spider):
 
                 # <----------------------------------------Oil Production--------------------------------------------------------->
 
-                elif lnk in OIL:
+                elif lnk in OIL and DOWNLOAD['oilProduction']:
                     count += 1
                     if not os.path.exists(os.path.join(STORAGE_PATH, str(county))):
                         os.mkdir(os.path.join(STORAGE_PATH, str(county)))
@@ -144,7 +144,7 @@ class Crawler(scrapy.Spider):
                 
                 # <-------------------------------------------Pdfs------------------------------------------------------>
 
-                elif lnk in TODOWNLOAD and PDF_DOWNLOAD:
+                elif lnk in TODOWNLOAD and DOWNLOAD['pdf']:
                     if not os.path.exists(os.path.join(STORAGE_PATH, str(county))):
                         os.mkdir(os.path.join(STORAGE_PATH, str(county)))
                     if not os.path.exists(os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID)):
