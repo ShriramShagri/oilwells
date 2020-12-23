@@ -262,7 +262,7 @@ class Crawler(scrapy.Spider):
 
             count = 0
             for i in range(len(cutting)):
-                if cutting[i] in TODOWNLOAD:
+                if cutting[i] in TODOWNLOAD and PDF_DOWNLOAD:
                     count += 1
                     yield Request(
                         url=response.urljoin(cuttinghref[i]),

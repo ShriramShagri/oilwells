@@ -144,7 +144,7 @@ class Crawler(scrapy.Spider):
                 
                 # <-------------------------------------------Pdfs------------------------------------------------------>
 
-                elif lnk in TODOWNLOAD:
+                elif lnk in TODOWNLOAD and PDF_DOWNLOAD:
                     if not os.path.exists(os.path.join(STORAGE_PATH, str(county))):
                         os.mkdir(os.path.join(STORAGE_PATH, str(county)))
                     if not os.path.exists(os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID)):
