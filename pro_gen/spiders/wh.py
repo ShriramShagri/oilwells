@@ -113,7 +113,7 @@ class Crawler(scrapy.Spider):
         sourceDownloaded = False
         for lnk in getLinkNames:
             if lnk in DOWNLOAD_CHECK:
-                if lnk == SOURCES or lnk.split('.')[-1] == 'xlsx':
+                if (lnk == SOURCES or lnk.split('.')[-1] == 'xlsx') and DOWNLOAD['sources']:
                     if not os.path.exists(os.path.join(STORAGE_PATH, str(county))):
                         os.mkdir(os.path.join(STORAGE_PATH, str(county)))
                     if not os.path.exists(os.path.join(STORAGE_PATH, str(county), CURRENTAPI + "_" + CURRENTKID)):
@@ -166,7 +166,7 @@ class Crawler(scrapy.Spider):
 
             if type(linktext) is list and type(link) is list:
                 if len(link) > 1:
-                    if link[1].split('.')[-1] == 'xlsx' or linktext[0] == SOURCES:
+                    if (link[1].split('.')[-1] == 'xlsx' or linktext[0] == SOURCES) and DOWNLOAD['sources']:
 
                         if not os.path.exists(os.path.join(STORAGE_PATH, str(county))):
                                 os.mkdir(os.path.join(STORAGE_PATH, str(county)))
