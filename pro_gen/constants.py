@@ -37,3 +37,5 @@ CRAWLER_NAME = {
     'wh': 'wh',
     'tops' : 'tops'
 }
+
+PDF_DOWNLOAD = True
