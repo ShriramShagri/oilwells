@@ -91,17 +91,18 @@ class Crawler(scrapy.Spider):
         self.items['dst'] = response.css('table+ table td').extract()
 
         # Downloads
-        downloadLinks = response.css('tr+ tr a::attr(href)').extract()
-        downloadLinkText = response.css('tr+ tr a::text').extract()
-        for index, text in enumerate(downloadLinkText):
-            if text == 'Download original data':
-                l = downloadLinks[index]
-                yield Request(
-                    url=response.urljoin(l),
-                    callback=self.save_file,
-                    meta={
-                        'kid': kid, 'api': api, 'filename': l.split('/')[-1], 'index': response.meta.get('index')}
-                )
+        if DOWNLOAD['dst']:
+            downloadLinks = response.css('tr+ tr a::attr(href)').extract()
+            downloadLinkText = response.css('tr+ tr a::text').extract()
+            for index, text in enumerate(downloadLinkText):
+                if text == 'Download original data':
+                    l = downloadLinks[index]
+                    yield Request(
+                        url=response.urljoin(l),
+                        callback=self.save_file,
+                        meta={
+                            'kid': kid, 'api': api, 'filename': l.split('/')[-1], 'index': response.meta.get('index')}
+                    )
 
         yield self.items
 
@@ -116,14 +117,15 @@ class Crawler(scrapy.Spider):
         filteredLinks = filter(f, filelinks)
 
         count = 0
-        for l in filteredLinks:
-            count += 1
-            yield Request(
-                url=response.urljoin(l),
-                callback=self.save_file,
-                meta={
-                    'kid': kid, 'api': api, 'filename': f"DST Report_{count}." + l.split('.')[-1], 'index': response.meta.get('index')}
-            )
+        if DOWNLOAD['dst']:
+            for l in filteredLinks:
+                count += 1
+                yield Request(
+                    url=response.urljoin(l),
+                    callback=self.save_file,
+                    meta={
+                        'kid': kid, 'api': api, 'filename': f"DST Report_{count}." + l.split('.')[-1], 'index': response.meta.get('index')}
+                )
 
     def save_file(self, response):
         '''
