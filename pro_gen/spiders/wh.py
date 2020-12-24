@@ -130,7 +130,7 @@ class Crawler(scrapy.Spider):
 
                 # <----------------------------------------Oil Production--------------------------------------------------------->
 
-                elif lnk in OIL and DOWNLOAD['oilProduction']:
+                elif lnk in OIL:
                     count += 1
                     if not os.path.exists(os.path.join(STORAGE_PATH, str(county))):
                         os.mkdir(os.path.join(STORAGE_PATH, str(county)))
@@ -349,8 +349,12 @@ class Crawler(scrapy.Spider):
             sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
             DATABASE.cur.execute(sql, (api, kid, str(e), "oilproduction"))
             DATABASE.conn.commit()
+            if not DOWNLOAD['oilProduction']:
+                os.remove(filename)
         else:
             DATABASE.conn.commit()
+            if not DOWNLOAD['oilProduction']:
+                os.remove(filename)
 
     def error(self, api, kid, e, table):
         sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"

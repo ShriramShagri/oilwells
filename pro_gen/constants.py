@@ -42,5 +42,5 @@ DOWNLOAD = {
     'pdf' : False,
     'oilProduction' : False,
     'sources' : True,
-    'dst' : True
+    'dst' : False
 }
