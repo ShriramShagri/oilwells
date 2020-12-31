@@ -10,6 +10,10 @@ import re
 from .constants import *
 from .essentials import *
 
+class ProductionPipeline():
+    def process_item(self, item, spider):
+        print('In')
+
 class ProGenPipeline():
     '''
     Handle Data Like Pro
@@ -294,7 +298,40 @@ class ProGenPipeline():
                 self.error(essentials[0], essentials[1], str(err), 'dst')
             else:
                 self.store_dst(cleanData, essentials)
+        
+        if 'production' in keysInItem:
+            datacol1 = item['production'][0]
+            filtereddata = []
+            for i in datacol1:
+                if len(i) < 150 or 'https://chasm.kgs.ku.edu/ords/oil.ogl5.SelectLeases?' not in i:
+                    i = i[80:-6].replace('</a>', '').replace('<br>', '').replace('\n', ' ')
+                    filtereddata.append([i,])
+            
+            datacol2 = item['production'][1]
+            for index, i in enumerate(datacol2):
+                filtereddata[index].append(i.split('\n')[1])
+            
+            datacol3 = item['production'][2]
+            count = 0
+            for index, i in enumerate(datacol3):
+                if 'https://chasm.kgs.ku.edu/ords/oil.ogl5.SelectLeases?' not in i:
+                    temp = i[4:].split('\n')[0]
+                    if '</td>' in temp:
+                        temp = ''
+                    filtereddata[count].append(temp)
+                    count+=1
 
+            datacol4 = item['production'][3]
+            finaldata = []
+            for index, i in enumerate(datacol4[1:]):
+                i = i.replace('\n', '').replace('<td>', '').replace("</td>", '').split('<br>')
+                row = filtereddata[index]
+                for j in i:
+                    if len(j) > 94:
+                        j = j[89:-4]
+                    finaldata.append(row+[j])
+            print(len(finaldata))
+            self.store_production(finaldata)
         return item
     
 
@@ -306,6 +343,21 @@ class ProGenPipeline():
             return list(filter(None, pattern.sub(lambda m: rep[re.escape(m.group(0))], text).split(s)))
         else:
             return pattern.sub(lambda m: rep[re.escape(m.group(0))], text)
+
+    def store_production(self, item):
+        '''
+        Store production to table
+        '''
+        try:
+            args_str = b','.join(DATABASE.cur.mogrify("(%s, %s, %s, %s)", tuple(x)) for x in item).decode("utf-8")
+            DATABASE.cur.execute("INSERT INTO production VALUES " + args_str)
+        except Exception as e:
+            DATABASE.conn.rollback()
+            sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
+            DATABASE.cur.execute(sql, ('NA', 'NA', str(e), "WH"))
+            DATABASE.conn.commit()
+        else:
+            DATABASE.conn.commit()
 
     def store_wh(self, item):
         '''

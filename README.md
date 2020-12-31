@@ -146,3 +146,9 @@ https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1051306869
 https://chasm.kgs.ku.edu/ords/qualified.well_page.DisplayWell?f_kid=1006084758
 
 https://chasm.kgs.ku.edu/ords/dst.dst2.DisplayDST?f_kid=1002876162
+
+> No production 
+
+https://chasm.kgs.ku.edu/ords/oil.ogl5.MainLease?f_lc=1044565756
+
+found 10 such in county 3
