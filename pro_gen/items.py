@@ -5,6 +5,9 @@
 
 import scrapy
 
+class ProductionItem(scrapy.Item):
+    production = scrapy.Field()
+
 
 class ProGenItem(scrapy.Item):
     # define the fields for your item here like:
@@ -18,6 +21,7 @@ class ProGenItem(scrapy.Item):
     pfHeaders = scrapy.Field()
     tops = scrapy.Field()
     dst = scrapy.Field()
+    production = scrapy.Field()
 
     def __str__(self):
         return ""
