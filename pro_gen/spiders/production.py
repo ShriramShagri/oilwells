@@ -103,8 +103,8 @@ class Crawler(scrapy.Spider):
         with open(filename, 'r') as in_file:
             stripped = [line.strip().strip('"') for line in in_file]
             for l in stripped[1:-1]:  # Ignore header
-                lines.append(item + ';' + 'NA' + ';' + l.replace('","', ';') + '\n')
-            lines.append(item + ';' + 'NA' + ';' + stripped[-1].replace('","', ';'))
+                lines.append('NA' + ';' + 'NA' + ';' + l.replace('","', ';') + '\n')
+            lines.append('NA' + ';' + 'NA' + ';' + stripped[-1].replace('","', ';'))
         self.logger.info('Saving txt %s', filename)
         with open(filename, 'w') as out_file:
             out_file.writelines(lines)
