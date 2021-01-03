@@ -36,12 +36,12 @@ CRAWLER_NAME = {
     'dst': 'dst',
     'wh': 'wh',
     'tops' : 'tops',
-    'production' : 'gen'
+    'production' : 'production'
 }
 
 DOWNLOAD = {
     'pdf' : False,
-    'oilProduction' : False,
+    'oilProduction' : True,
     'sources' : True,
     'dst' : False
 }
