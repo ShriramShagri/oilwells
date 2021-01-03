@@ -312,14 +312,8 @@ class ProGenPipeline():
                 filtereddata[index].append(i.split('\n')[1])
             
             datacol3 = item['production'][2]
-            count = 0
             for index, i in enumerate(datacol3):
-                if 'https://chasm.kgs.ku.edu/ords/oil.ogl5.SelectLeases?' not in i:
-                    temp = i[4:].split('\n')[0]
-                    if '</td>' in temp:
-                        temp = ''
-                    filtereddata[count].append(temp)
-                    count+=1
+                filtereddata[index].append(i)
 
             datacol4 = item['production'][3]
             finaldata = []

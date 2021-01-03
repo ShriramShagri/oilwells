@@ -42,16 +42,25 @@ class Crawler(scrapy.Spider):
         if len(wellColumn) > 2:
             datacol1 = response.css('tr+ tr td:nth-child(1)').extract()
             datacol2 = response.css('tr+ tr td:nth-child(2)').extract()
-            datacol3 = response.css('tr+ tr td:nth-child(3)').extract()
+            datacol3 = []
+            datacol3temp = response.css('tr+ tr td:nth-child(3)').extract()
+            for i in datacol3temp:
+                if 'https://chasm.kgs.ku.edu/ords/oil.ogl5.SelectLeases?' not in i:
+                    temp = i[4:].split('\n')[0]
+                    if '</td>' in temp:
+                        temp = ''
+                    datacol3.append(temp)
             datacol4 = response.css('td:nth-child(4)').extract()
             self.items['production'] = [datacol1, datacol2, datacol3, datacol4]
             yield self.items
-            for ind, a in enumerate(wellColumn):
+            count = 0
+            for a in wellColumn:
                 if len(a)<80:
                     yield response.follow(a,
                                 callback=self.get_data,
-                                meta = {'index' : index,  'filename' : os.path.join(STORAGE_PATH, str(index), f'production_{page}_{ind}.txt')}
+                                meta = {'index' : index,  'filename' : os.path.join(STORAGE_PATH, str(index), f'{datacol3[count]}.txt')}
                                 )
+                    count+=1
             yield response.follow(
                 f'https://chasm.kgs.ku.edu/ords/oil.ogl5.SelectLeases?f_t=&f_r=&ew=W&f_s=&f_l=&f_op=&f_c={index}&sort_by=&f_pg={page+1}',
                 callback=self.start_scraping,
@@ -65,22 +74,30 @@ class Crawler(scrapy.Spider):
 
         yield response.follow(fileLink,
                 callback=self.getOilData,
-                meta = {'index' : index, 'filename' : filename,})
+                meta = {'index' : index, 'filename' : filename, 'link' : fileLink})
     
     def getOilData(self, response):
         # kid = response.meta.get('kid')
         # api = response.meta.get('api')
         filename = response.meta.get('filename')
+        link = response.meta.get('link')
         count = response.meta.get('m')
         #  Get txt file link and download
         oil_data_href = response.css('a').xpath('@href').extract()
+        flag = True
         for item in oil_data_href:
             if item.split('.').pop() == 'txt':
+                flag = False
                 yield Request(
                 url=response.urljoin(oil_data_href[-1]),
                 callback=self.save_oil_data,
                 meta={'filename': filename, 'api': item}
             )
+        
+        if flag:
+            sql = "INSERT INTO errors VALUES (%s, %s, %s, %s)"
+            DATABASE.cur.execute(sql, (link, 'NA', "No data found", "oilproduction"))
+            DATABASE.conn.commit()
     def save_oil_data(self, response):
         '''
         This function reads oil production txt file and saves it first
