@@ -41,7 +41,7 @@ CRAWLER_NAME = {
 
 DOWNLOAD = {
     'pdf' : False,
-    'oilProduction' : False,
+    'oilProduction' : True,
     'sources' : True,
     'dst' : False
 }

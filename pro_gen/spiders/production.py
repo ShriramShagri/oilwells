@@ -58,7 +58,7 @@ class Crawler(scrapy.Spider):
                 if len(a)<80:
                     yield response.follow(a,
                                 callback=self.get_data,
-                                meta = {'index' : index,  'filename' : os.path.join(STORAGE_PATH, str(index), f'{datacol3[count]}.txt')}
+                                meta = {'index' : index,  'filename' : os.path.join(STORAGE_PATH, str(index), f'{datacol3[count]}_{count}.txt')}
                                 )
                     count+=1
             yield response.follow(
