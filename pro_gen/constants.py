@@ -36,7 +36,7 @@ CRAWLER_NAME = {
     'dst': 'dst',
     'wh': 'wh',
     'tops' : 'tops',
-    'production' : 'gen'
+    'production' : 'production'
 }
 
 DOWNLOAD = {
